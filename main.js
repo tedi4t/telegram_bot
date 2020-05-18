@@ -3,13 +3,24 @@ const { Telegraf } = require('telegraf');
 const fetch = require("node-fetch");
 
 const BOT_TOKEN = '1099889005:AAEH1YQyLaRl5HcTphsk9N2RRJ_nf21iPug';
+const url = 'https://878a4f9d.ngrok.io';
+const port = 3000;
 
-const bot = new Telegraf(BOT_TOKEN);
+const bot = new Telegraf(BOT_TOKEN, {
+  webHook: {
+    port
+  }
+});
+
+bot.telegram.setWebhook(`${url}/bot${BOT_TOKEN}`);
+bot.startWebhook();
+
+const letterChanger = require("./constantas.js");
 
 const chatGroupID = readFile('chatGroupID.txt'); //chatID -> groupID
 const chatTeacherID = readFile('chatTeacherID.txt'); //chatID -> teacherID
 
-const groupsBase = mixFindIndex(JSON.parse(fs.readFileSync("./base/groupsBase.txt", 'utf8')));
+const groupsBase = (JSON.parse(fs.readFileSync("./base/groupsBase.txt", 'utf8')));
 const lessonsBase = JSON.parse(fs.readFileSync("./base/lessonsBase.txt", 'utf8'));
 const roomsSchedule = JSON.parse(fs.readFileSync("./base/roomsSchedule.txt", 'utf8'));
 const studentSchedule = JSON.parse(fs.readFileSync("./base/studentSchedule.txt", 'utf8'));
@@ -18,11 +29,11 @@ const teacherSchedule = JSON.parse(fs.readFileSync("./base/teachersSchedule.txt"
 
 const days = [``, `Понеділок`, `Вівторок`, `Середа`, `Четвер`, `П'ятниця`, `Субота`, `Неділя`];
 const scheduleLessons = [
-  {condition: date => 510 <= date.getHours() * 60 + date.getMinutes() <= 605},
-  {condition: date => 625 <= date.getHours() * 60 + date.getMinutes() <= 720},
-  {condition: date => 740 <= date.getHours() * 60 + date.getMinutes() <= 835},
-  {condition: date => 855 <= date.getHours() * 60 + date.getMinutes() <= 950},
-  {condition: date => 970 <= date.getHours() * 60 + date.getMinutes() <= 1065}
+  {condition: time => (510 <= time && time <= 605)},
+  {condition: time => (625 <= time && time <= 720)},
+  {condition: time => (740 <= time && time <= 835)},
+  {condition: time => (855 <= time && time <= 950)},
+  {condition: time => (970 <= time && time <= 1065)}
 ];
 const scheduleBreaks = [
   {condition: date => 605 <= date.getHours() * 60 + date.getMinutes() <= 625},
@@ -37,7 +48,7 @@ getWeek(false);
 setTimeout(getWeek, milliSecondsWeek - convertDateToSeconds(date));
 
 function convertDateToSeconds(date) {
-  const day = date.getDay();
+  const day = date.getDay() - 1;
   const hours = date.getHours();
   const minutes = date.getMinutes();
   const seconds = date.getSeconds();
@@ -58,24 +69,56 @@ async function getWeek(setTimer = true) {
 }
 
 function readFile(path) {
-  const file = JSON.parse(fs.readFileSync(path, 'utf8'));
-  return typeof file === 'object' ? file : {};
+  try {
+    const file = JSON.parse(fs.readFileSync(path, 'utf8'));
+    return typeof file === 'object' ? file : {};
+  } catch (e) {
+    return new Object();
+  }
 }
 
-function mixFindIndex(obj) {
-  obj.indexOf = (val) => {
-    for (const key in obj) {
-      if (typeof obj[key] === 'string' && typeof val === 'string' && (obj[key].localeCompare(val) === 0))
-        return key;
-    }
-  };
-  return obj;
-}
+// function mixFindIndex(obj) {
+//   Object.defineProperty(obj, indexOf, {
+//     value: (val) => {
+//       for (const key in obj) {
+//         if (typeof obj[key] === 'string' && typeof val === 'string' && (obj[key].localeCompare(val) === 0))
+//           return key;
+//       }
+//     },
+//     enumerable: false,
+//   })
+//   obj.indexOf = (val) => {
+//     for (const key in obj) {
+//       if (typeof obj[key] === 'string' && typeof val === 'string' && (obj[key].localeCompare(val) === 0))
+//         return key;
+//     }
+//   };
+//   return obj;
+// }
 
 function parseCommandText(str) {
   const strArr = str.toLowerCase().split(' ');
   strArr.shift();
   return strArr;
+}
+
+function parseGroupName(str) {
+  if (str) {
+    const arr = str.split('');
+    const parsedNameArr = [];
+    parsedNameArr[2] = '-';
+    for (const index in arr) {
+      const indInt = parseInt(index);
+      const value = arr[index];
+      const changer = letterChanger[value];
+      if (parsedNameArr[indInt] && value !== '-') {
+        changer ? parsedNameArr[indInt + 1] = changer : parsedNameArr[indInt + 1] = value;
+      } else {
+        changer ? parsedNameArr[indInt] = changer : parsedNameArr[indInt] = value;
+      }
+    }
+    return parsedNameArr.join('');
+  }
 }
 
 function stringScheduleForDay(lessons) {
@@ -93,14 +136,15 @@ function stringScheduleForDay(lessons) {
 }
 
 function findLessonNumb(date) {
+  const time = date.getHours() * 60 + date.getMinutes();
   for (const lessonNumb in scheduleLessons) {
     const lesson = scheduleLessons[lessonNumb];
-    if (lesson.condition(date))
-      return lessonNumb + 1;
+    if (lesson.condition(time))
+      return parseInt(lessonNumb) + 1;
   }
 }
 
-function findCongruences(enteredArr) {
+function findCongruencesTeacher(enteredArr) {
   const congruences = [];
   for (const id in teachersBase) {
     let converged = true;
@@ -111,8 +155,8 @@ function findCongruences(enteredArr) {
           converged = false;
       } else {
         if (converged && nameArr[index] && enteredArr[index]) {
-         if (nameArr[index][0] !== enteredArr[index][0])
-           converged = false;
+          if (nameArr[index][0] !== enteredArr[index][0])
+            converged = false;
         }
       }
     }
@@ -121,31 +165,101 @@ function findCongruences(enteredArr) {
   return congruences;
 }
 
+function findCongruencesGroup(str) {
+  const congruences = [];
+  for (const id in groupsBase) {
+    const nameArr = groupsBase[id].split(' ');
+    if (str.localeCompare(nameArr[0]) === 0)
+      congruences.push({id, name: nameArr.join(' ')});
+  }
+  return congruences;
+}
+
+function sendInlineKeyboardMessage(chatID, keyboard) {
+  const selectKeyboard = {
+    reply_markup: JSON.stringify({
+      inline_keyboard: keyboard,
+    }),
+  };
+  bot.telegram.sendMessage(chatID, `We've found some results. Select one please`, selectKeyboard);
+}
+
+function findLessonByNumb(lessons, numb) {
+  for (const lesson of lessons) {
+    if (lesson.lesson_number == numb)
+      return lesson;
+  }
+}
+
 bot.start((ctx) => {
-  ctx.reply(`Hi! I'm your bot in the KPI world. At first, choose your group. To do this, write /group and name of your group.`);
+  ctx.reply(`Hi! I'm your bot in the KPI world. At first, choose your group. To do this, write /group and name of your group.` +
+  `e.g. "/group ip93". If I can't find it, please write it in ukrainian. If you are teacher write /teacher anf your surname un ukrainian.` +
+  `If you want you can write your name and middle name. e. g. "/teacher Шемсединов Тимур Гафарович"`);
 });
+
+bot.help(ctx => {
+  ctx.reply(`At first, choose your group. To do this, write /group and name of your group.` +
+    `e.g. "/group ip93". If I can't find it, please write it in ukrainian. If you are teacher write /teacher anf your surname un ukrainian.` +
+  `If you want you can write your name and middle name. e. g. "/teacher Шемсединов Тимур Гафарович"`);
+});
+
+bot.command('/yura', ctx => {
+  ctx.reply(`I have found one pidor. It's @deGenre`);
+})
 
 bot.command(`/group`, ctx => {
   const chatID = ctx.update.message.chat.id;
-  const ID = groupsBase.indexOf(parseCommandText(ctx.update.message.text)[0]);
-  if (ID) {
-    chatGroupID[chatID] = ID;
-    fs.writeFileSync("chatGroupID.txt", JSON.stringify(chatGroupID));
-    ctx.reply('Your group was set!');
-  } else ctx.reply('Unknown group name');
+  const enteredGroup = parseGroupName(parseCommandText(ctx.update.message.text)[0]);
+  if (enteredGroup){
+    const congruences = findCongruencesGroup(enteredGroup);
+    if (congruences.length > 0) {
+      if (congruences.length === 1) {
+        chatGroupID[chatID] = congruences[0].id;
+        fs.writeFileSync("chatGroupID.txt", JSON.stringify(chatGroupID));
+        ctx.reply('Your group was set');
+      } else {
+        const keyboard = [];
+        for (const group of congruences)
+          keyboard.push([{text: group.name, callback_data: `group ${group.id}`}]);
+        sendInlineKeyboardMessage(ctx.message.chat.id, keyboard);
+      }
+    } else {
+      ctx.reply(`Can't find group's name`);
+    }
+  }
 });
 
-bot.command(`/getGroupID`, ctx => {
+/*
+  const chatID = ctx.update.message.chat.id;
+  const enteredNameArr = parseCommandText(ctx.update.message.text);
+  const congruences = findCongruencesTeacher(enteredNameArr);
+  if (congruences.length > 0) {
+    if (congruences.length === 1) {
+      chatTeacherID[chatID] = congruences[0].id;
+      fs.writeFileSync("chatTeacherID.txt", JSON.stringify(chatTeacherID));
+      ctx.reply('Your name was set');
+    } else {
+      const keyboard = [];
+      for (const teacher of congruences)
+        keyboard.push([{text: teacher.name, callback_data: `teacher ${teacher.id}`}]);
+      sendInlineKeyboardMessage(ctx.message.chat.id, keyboard);
+    }
+  } else {
+    ctx.reply(`Can't find teacher's name`);
+  }
+ */
+
+bot.command(`/getGroupName`, ctx => {
   const chatID = ctx.update.message.chat.id;
   if (chatGroupID[chatID]) {
-    ctx.reply(`Your group is ${chatGroupID[chatID]}`);
+    ctx.reply(`Your group is ${groupsBase[chatGroupID[chatID]]}`);
   } else ctx.reply('Your group ID was not set!');
 });
 
-bot.command(`/getTeacherID`, ctx => {
+bot.command(`/getTeacherName`, ctx => {
   const chatID = ctx.update.message.chat.id;
   if (chatTeacherID[chatID]) {
-    ctx.reply(`Your teacher is ${chatTeacherID[chatID]}`);
+    ctx.reply(`Your teacher is ${teachersBase[chatTeacherID[chatID]]}`);
   } else ctx.reply('Your teacher ID was not set!');
 });
 
@@ -225,41 +339,25 @@ bot.command('/nextweek', ctx => {
   } else ctx.reply('Your group ID was not set!');
 });
 
-bot.command('/busyrooms', ctx => {
-  const chatID = ctx.update.message.chat.id;
-  const block = parseCommandText(ctx.update.message.text)[0];
-  const date = new Date();
-  const lessonNumb = findLessonNumb(date);
-  const day = date.getDay();
-  //block -> week -> day -> lesson number
-  if (block && roomsSchedule[block] && roomsSchedule[block][week] &&
-    roomsSchedule[block][week][day] && lessonNumb && roomsSchedule[block][week][day][lessonNumb])
-    ctx.reply(roomsSchedule[block][week][day][lessonNumb]);
-  else ctx.reply(`Can't find rooms`);
-});
-
 bot.command('/teacher', ctx => {
   const chatID = ctx.update.message.chat.id;
   const enteredNameArr = parseCommandText(ctx.update.message.text);
-  const congruences = findCongruences(enteredNameArr);
-  if (congruences.length > 0) {
-    if (congruences.length === 1) {
-      chatTeacherID[chatID] = congruences[0].id;
-      fs.writeFileSync("chatTeacherID.txt", JSON.stringify(chatTeacherID));
-      ctx.reply('Your name was set');
+  if (enteredNameArr.length) {
+    const congruences = findCongruencesTeacher(enteredNameArr);
+    if (congruences.length > 0) {
+      if (congruences.length === 1) {
+        chatTeacherID[chatID] = congruences[0].id;
+        fs.writeFileSync("chatTeacherID.txt", JSON.stringify(chatTeacherID));
+        ctx.reply('Your name was set');
+      } else {
+        const keyboard = [];
+        for (const teacher of congruences)
+          keyboard.push([{text: teacher.name, callback_data: `teacher ${teacher.id}`}]);
+        sendInlineKeyboardMessage(ctx.message.chat.id, keyboard);
+      }
     } else {
-      const keyboard = [];
-      for (const teacher of congruences)
-        keyboard.push([{text: teacher.name, callback_data: `teacher ${teacher.id}`}]);
-      const selectKeyboard = {
-        reply_markup: JSON.stringify({
-          inline_keyboard: keyboard
-        })
-      };
-      bot.telegram.sendMessage(ctx.message.chat.id, `We've found some results. Select one please`, selectKeyboard)
+      ctx.reply(`Can't find teacher's name`);
     }
-  } else {
-    ctx.reply(`Can't find teacher's name`);
   }
 });
 
@@ -333,28 +431,71 @@ bot.command('/teachernextweek', ctx => {
       }
       const schedule = weekSchedule.join(`\n\n`);
       if (schedule)
-        ctx.reply(weekSchedule.join(`\n\n`), {parse_mode: 'Markdown'});
+        ctx.reply(schedule, {parse_mode: 'Markdown'});
       else ctx.reply(`You don't have lessons this week`);
     }
   } else ctx.reply('Your teacher ID was not set!');
+});
+
+bot.command('/busyrooms', ctx => {
+  const chatID = ctx.update.message.chat.id;
+  const block = parseCommandText(ctx.update.message.text)[0];
+  const date = new Date();
+  const day = date.getDay();
+  try {
+    const lessonNumb = findLessonNumb(date);
+    ctx.reply(roomsSchedule[block][week][day][lessonNumb].join(', '));
+  } catch (e) {
+    ctx.reply(`Can't find rooms`);
+  }
+});
+
+// bot.command('/name', ctx => {
+//   const chatID = ctx.update.message.chat.id;
+//   const date = new Date();
+//   const day = date.getDay();
+//   const lessonNumb = findLessonByNumb(studentSchedule[chatGroupID[chatID]][week][day], findLessonNumb(date));
+//   console.log({lessonNumb, ID: chatGroupID[chatID], week, day});
+//   console.log(studentSchedule[chatGroupID[chatID]][week][day][0].teachers);
+//   if (studentSchedule[chatGroupID[chatID]][week] && studentSchedule[chatGroupID[chatID]][week][day]) {
+//     const lessonNumb = findLessonByNumb(studentSchedule[chatGroupID[chatID]][week][day], findLessonNumb(date));
+//     if (lessonNumb)
+//       ctx.reply(studentSchedule[chatGroupID[chatID]][week][day][lessonNumb].teachers.map(obj => obj.teacher_name).join(', '))
+//     else ctx.reply(`You don't have any lesson now`);
+//   } else ctx.reply(`You don't have any lesson now`);
+// });
+
+bot.command('/name', ctx => {
+  const chatID = ctx.update.message.chat.id;
+  const date = new Date();
+  const day = date.getDay();
+  try {
+    const lesson = findLessonByNumb(studentSchedule[chatGroupID[chatID]][week][day], findLessonNumb(date));
+    ctx.reply(lesson.teachers.map(obj => obj.teacher_name).join(', '))
+  } catch (e) {
+    ctx.reply(`You don't have any lesson now`);
+  }
+});
+
+bot.catch((err, ctx) => {
+  console.log(`Ooops, unknown error: ${err.message}`);
 });
 
 bot.on('callback_query', ctx => {
   const chatID = ctx.update.callback_query.message.chat.id;
   const text = ctx.update.callback_query.data;
   const command = text.split(' ')[0];
+  ctx.editMessageReplyMarkup();
   if (command === 'teacher') {
     chatTeacherID[chatID] = text.split(' ')[1];
     fs.writeFileSync("chatTeacherID.txt", JSON.stringify(chatTeacherID));
     ctx.reply('Your name was set');
   }
+  if (command === 'group') {
+    chatGroupID[chatID] = text.split(' ')[1];
+    fs.writeFileSync("chatGroupID.txt", JSON.stringify(chatGroupID));
+    ctx.reply('Your group was set');
+  }
 })
-
-
-
-
-// bot.command('/WhoIsPidor', ctx => {
-//   ctx.reply(`I have found one pidor. It's @deGenre`);
-// })
 
 bot.launch();
