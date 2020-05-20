@@ -1,34 +1,32 @@
-const { letterChanger, days, scheduleLessons} = require("./constantas.js");
-const fs = require('fs')
-const fetch = require("node-fetch");
+'use strict';
 
-const chatGroupID = readFile('./chatGroupID.txt'); //chatID -> groupID
-const chatTeacherID = readFile('./chatTeacherID.txt'); //chatID -> teacherID
+const { letterChanger, days, scheduleLessons } = require('./constantas.js');
+const fs = require('fs');
+const fetch = require('node-fetch');
 
-const groupsBase = (JSON.parse(fs.readFileSync('./base/groupsBase.txt', 'utf8')));
-const studentSchedule = JSON.parse(fs.readFileSync("./base/studentSchedule.txt", 'utf8'));
-const teachersBase = JSON.parse(fs.readFileSync("./base/teachersBase.txt", 'utf8'));
-const teacherSchedule = JSON.parse(fs.readFileSync("./base/teachersSchedule.txt", 'utf8'));
+//chatID -> groupID
+const chatGroupID = readFile('./chatID/chatGroupID.txt');
+//chatID -> teacherID
+const chatTeacherID = readFile('./chatID/chatTeacherID.txt');
 
-function convertDateToSeconds(date) {
+const groupsBase = readFile('./base/groupsBase.txt', 'utf8');
+const studentSchedule = readFile('./base/studentSchedule.txt', 'utf8');
+const teachersBase = readFile('./base/teachersBase.txt', 'utf8');
+const teacherSchedule = readFile('./base/teachersSchedule.txt', 'utf8');
+
+function findSecondsDate() {
+  const date = new Date();
   const day = date.getDay() - 1;
   const hours = date.getHours();
   const minutes = date.getMinutes();
   const seconds = date.getSeconds();
-  return (day*86400 + hours*3600 + minutes*60 + seconds)*1000
+  return (day * 86400 + hours * 3600 + minutes * 60 + seconds) * 1000;
 }
 
 async function sendRequestAsync(url) {
-  let response = await fetch(url);
-  let data = await response.json();
+  const response = await fetch(url);
+  const data = await response.json();
   return data;
-}
-
-async function getWeek(setTimer = true) {
-  week = (await sendRequestAsync(`https://api.rozklad.org.ua/v2/weeks`)).data;
-  if (setTimer) {
-    setTimeout(getWeek, milliSecondsWeek)
-  }
 }
 
 function readFile(path) {
@@ -55,11 +53,13 @@ function parseGroupName(str) {
       const indInt = parseInt(index);
       const value = arr[index];
       const changer = letterChanger[value];
-      if (parsedNameArr[indInt] && value !== '-') {
-        changer ? parsedNameArr[indInt + 1] = changer : parsedNameArr[indInt + 1] = value;
-      } else {
-        changer ? parsedNameArr[indInt] = changer : parsedNameArr[indInt] = value;
-      }
+      if (parsedNameArr[indInt]) {
+        if (changer)
+          parsedNameArr[indInt + 1] = changer;
+        else parsedNameArr[indInt + 1] = value;
+      } else if (changer)
+        parsedNameArr[indInt] = changer;
+      else parsedNameArr[indInt] = value;
     }
     return parsedNameArr.join('');
   }
@@ -73,9 +73,10 @@ function stringScheduleForDay(lessons) {
     const str = [`*${days[lessons[index].day_number]}*`];
     for (const lesson of lessons) {
       if (lesson)
-        str.push(`${lesson.lesson_number}. ${lesson.lesson_name} ${lesson.lesson_type} ${lesson.lesson_room}`);
+        str.push(`${lesson.lesson_number}. ${lesson.lesson_name}` +
+          `${lesson.lesson_type} ${lesson.lesson_room}`);
     }
-    return str.join(`\n`);
+    return str.join('\n');
   }
 }
 
@@ -94,14 +95,12 @@ function findCongruencesTeacher(enteredArr) {
     let converged = true;
     const nameArr = teachersBase[id].toLowerCase().split(' ');
     for (const index in enteredArr) {
-      if (index == 0) {
+      if (parseInt(index) === 0) {
         if (nameArr[index].localeCompare(enteredArr[index]) !== 0)
           converged = false;
-      } else {
-        if (converged && nameArr[index] && enteredArr[index]) {
-          if (nameArr[index][0] !== enteredArr[index][0])
-            converged = false;
-        }
+      } else if (converged && nameArr[index] && enteredArr[index]) {
+        if (nameArr[index][0] !== enteredArr[index][0])
+          converged = false;
       }
     }
     if (converged) congruences.push({ id, name: nameArr.join(' ') });
@@ -114,18 +113,9 @@ function findCongruencesGroup(str) {
   for (const id in groupsBase) {
     const nameArr = groupsBase[id].split(' ');
     if (str.localeCompare(nameArr[0]) === 0)
-      congruences.push({id, name: nameArr.join(' ')});
+      congruences.push({ id, name: nameArr.join(' ') });
   }
   return congruences;
-}
-
-function sendInlineKeyboardMessage(chatID, keyboard) {
-  const selectKeyboard = {
-    reply_markup: JSON.stringify({
-      inline_keyboard: keyboard,
-    }),
-  };
-  bot.telegram.sendMessage(chatID, `We've found some results. Select one please`, selectKeyboard);
 }
 
 function findLessonByNumb(lessons, numb) {
@@ -137,51 +127,54 @@ function findLessonByNumb(lessons, numb) {
 
 function replyOneDayStudent(ctx, week, day) {
   const chatID = ctx.update.message.chat.id;
-  const groupID = chatGroupID[chatID];
+  const groupID = chatGroupID[`${chatID}`];
   if (groupID) {
     if (!studentSchedule[groupID])
-      ctx.reply(`There aren't any lessons by this ID`);
+      ctx.reply('There aren\'t any lessons by this ID');
     else {
-      const schedule = stringScheduleForDay(studentSchedule[groupID][week][day]);
-      if (schedule)
-        ctx.reply(schedule, {parse_mode: 'Markdown'});
-      else ctx.reply(`You don't have any lessons`);
+      const schedule = studentSchedule[groupID][week][day];
+      const scheduleDay = stringScheduleForDay(schedule);
+      if (scheduleDay)
+        ctx.reply(scheduleDay, { parse_mode: 'Markdown' });
+      else ctx.reply('You don\'t have any lessons');
     }
   } else ctx.reply('Your group ID was not set!');
 }
 
-function replyWeekStudent (ctx, week) {
+function replyWeekStudent(ctx, week) {
   const chatID = ctx.update.message.chat.id;
   const groupID = chatGroupID[chatID];
   if (groupID) {
     if (!studentSchedule[groupID])
-      ctx.reply(`There aren't any lessons by this ID`);
+      ctx.reply('There aren\'t any lessons by this ID');
     else {
-      let weekSchedule = [];
+      const weekSchedule = [];
       for (let day = 1; day <= 7; day++) {
-        const daySchedule = stringScheduleForDay(studentSchedule[groupID][week][day]);
+        const schedule = studentSchedule[groupID][week][day];
+        const daySchedule = stringScheduleForDay(schedule);
         if (daySchedule)
           weekSchedule.push(daySchedule);
       }
-      const schedule = weekSchedule.join(`\n\n`);
+      const schedule = weekSchedule.join('\n\n');
       if (schedule)
-        ctx.reply(weekSchedule.join(`\n\n`), {parse_mode: 'Markdown'});
-      else ctx.reply(`You don't have lessons`);
+        ctx.reply(weekSchedule.join('\n\n'), { parse_mode: 'Markdown' });
+      else ctx.reply('You don\'t have lessons');
     }
   } else ctx.reply('Your group ID was not set!');
 }
 
-function replyOneDayTeacher (ctx, week, day) {
+function replyOneDayTeacher(ctx, week, day) {
   const chatID = ctx.update.message.chat.id;
   const teacherID = chatTeacherID[chatID];
   if (teacherID) {
     if (!teacherSchedule[teacherID])
-      ctx.reply(`There aren't any lessons by this ID`);
+      ctx.reply('There aren\'t any lessons by this ID');
     else {
-      const schedule = stringScheduleForDay(teacherSchedule[teacherID][week][day]);
-      if (schedule)
-        ctx.reply(schedule, {parse_mode: 'Markdown'});
-      else ctx.reply(`You don't have any lessons`);
+      const schedule = teacherSchedule[teacherID][week][day];
+      const scheduleDay = stringScheduleForDay(schedule);
+      if (scheduleDay)
+        ctx.reply(scheduleDay, { parse_mode: 'Markdown' });
+      else ctx.reply('You don\'t have any lessons');
     }
   } else ctx.reply('Your teacher ID was not set!');
 }
@@ -190,19 +183,20 @@ function replyWeekTeacher(ctx, week) {
   const chatID = ctx.update.message.chat.id;
   const teacherID = chatTeacherID[chatID];
   if (teacherID) {
-    let weekSchedule = [];
+    const weekSchedule = [];
     if (!teacherSchedule[teacherID])
-      ctx.reply(`There aren't any lessons by this ID`);
+      ctx.reply('There aren\'t any lessons by this ID');
     else {
       for (let day = 1; day <= 7; day++) {
-        const daySchedule = stringScheduleForDay(teacherSchedule[teacherID][week][day]);
+        const schedule = teacherSchedule[teacherID][week][day];
+        const daySchedule = stringScheduleForDay(schedule);
         if (daySchedule)
           weekSchedule.push(daySchedule);
       }
-      const schedule = weekSchedule.join(`\n\n`);
+      const schedule = weekSchedule.join('\n\n');
       if (schedule)
-        ctx.reply(weekSchedule.join(`\n\n`), {parse_mode: 'Markdown'});
-      else ctx.reply(`You don't have lessons`);
+        ctx.reply(weekSchedule.join('\n\n'), { parse_mode: 'Markdown' });
+      else ctx.reply('You don\'t have lessons');
     }
   } else ctx.reply('Your teacher ID was not set!');
 }
@@ -210,17 +204,15 @@ function replyWeekTeacher(ctx, week) {
 module.exports = {
   readFile,
   sendRequestAsync,
-  convertDateToSeconds,
+  findSecondsDate,
   parseGroupName,
   parseCommandText,
   findCongruencesGroup,
   findCongruencesTeacher,
-  sendInlineKeyboardMessage,
   replyOneDayStudent,
   replyWeekStudent,
   replyOneDayTeacher,
   replyWeekTeacher,
   findLessonNumb,
   findLessonByNumb,
-  sendInlineKeyboardMessage,
-}
+};
