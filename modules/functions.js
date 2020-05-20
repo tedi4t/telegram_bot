@@ -9,10 +9,11 @@ const chatGroupID = readFile('./chatID/chatGroupID.txt');
 //chatID -> teacherID
 const chatTeacherID = readFile('./chatID/chatTeacherID.txt');
 
-const groupsBase = readFile('./base/groupsBase.txt', 'utf8');
-const studentSchedule = readFile('./base/studentSchedule.txt', 'utf8');
-const teachersBase = readFile('./base/teachersBase.txt', 'utf8');
-const teacherSchedule = readFile('./base/teachersSchedule.txt', 'utf8');
+const groupsBase = readFile('./base/groupsBase.txt');
+const studentSchedule = readFile('./base/studentSchedule.txt');
+const teachersBase = readFile('./base/teachersBase.txt');
+const teacherSchedule = readFile('./base/teachersSchedule.txt');
+const roomsSchedule = readFile('./base/roomsSchedule.txt');
 
 function findSecondsDate() {
   const date = new Date();
@@ -201,6 +202,25 @@ function replyWeekTeacher(ctx, week) {
   } else ctx.reply('Your teacher ID was not set!');
 }
 
+function findTeacherName(ctx, week) {
+  const chatID = ctx.update.message.chat.id;
+  const date = new Date();
+  const day = date.getDay();
+  const schedule = studentSchedule[chatGroupID[chatID]][week][day];
+  const lessonNumb = findLessonNumb(date);
+  const lesson = findLessonByNumb(schedule, lessonNumb);
+  const teacher = lesson.teachers.map(obj => obj.teacher_name).join(', ');
+  return teacher;
+}
+
+function findBusyRooms(ctx, block, week) {
+  const date = new Date();
+  const day = date.getDay();
+  const lessonNumb = findLessonNumb(date);
+  const rooms = roomsSchedule[block][week][day][lessonNumb];
+  return rooms;
+}
+
 module.exports = {
   readFile,
   sendRequestAsync,
@@ -213,6 +233,6 @@ module.exports = {
   replyWeekStudent,
   replyOneDayTeacher,
   replyWeekTeacher,
-  findLessonNumb,
-  findLessonByNumb,
+  findTeacherName,
+  findBusyRooms
 };

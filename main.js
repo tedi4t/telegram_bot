@@ -10,9 +10,6 @@ const chatGroupID = FUNCTIONS.readFile('./chatID/chatGroupID.txt');
 //chatID -> teacherID
 const chatTeacherID = FUNCTIONS.readFile('./chatID/chatTeacherID.txt');
 
-const roomsSchedule = FUNCTIONS.readFile('./base/roomsSchedule.txt');
-const studentSchedule = FUNCTIONS.readFile('./base/studentSchedule.txt');
-
 const { BOT_TOKEN } = require('./modules/config');
 const { milliSecondsWeek } = require('./modules/constantas');
 
@@ -40,8 +37,8 @@ function sendInlineKeyboardMessage(chatID, keyboard) {
 }
 
 bot.start(ctx => {
-  ctx.reply('Hi! I\'m your bot in the KPI world. At first, choose your group.' +
-    ' To do this, write /group and name of your group.' +
+  ctx.reply('Hi! I\'m your bot in the KPI world. At first, choose your' +
+    ' group. To do this, write /group and name of your group.' +
   'e.g. "/group ip93". If I can\'t find it, please write it in ukrainian. ' +
     'If you are teacher write /teacher anf your surname un ukrainian.' +
   'If you want you can write your name and middle name. ' +
@@ -146,25 +143,16 @@ bot.command('/teachernextweek', ctx => {
 
 bot.command('/busyrooms', ctx => {
   const block = FUNCTIONS.parseCommandText(ctx.update.message.text)[0];
-  const date = new Date();
-  const day = date.getDay();
   try {
-    const lessonNumb = FUNCTIONS.findLessonNumb(date);
-    ctx.reply(roomsSchedule[block][week][day][lessonNumb].join(', '));
+    ctx.reply(FUNCTIONS.findBusyRooms(ctx, block, week).join(', '));
   } catch (e) {
     ctx.reply('Can\'t find rooms');
   }
 });
 
 bot.command('/name', ctx => {
-  const chatID = ctx.update.message.chat.id;
-  const date = new Date();
-  const day = date.getDay();
   try {
-    const schedule = studentSchedule[chatGroupID[chatID]][week][day];
-    const lessonNumb = FUNCTIONS.findLessonNumb(date);
-    const lesson = FUNCTIONS.findLessonByNumb(schedule, lessonNumb);
-    ctx.reply(lesson.teachers.map(obj => obj.teacher_name).join(', '));
+    ctx.reply(FUNCTIONS.findTeacherName(ctx, week));
   } catch (e) {
     ctx.reply('You don\'t have any lesson now');
   }
