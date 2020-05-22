@@ -40,8 +40,8 @@ bot.start(ctx => {
   ctx.reply('Hi! I\'m your bot in the KPI world. At first, choose your' +
     ' group. To do this, write /group and name of your group.' +
   'e.g. "/group ip93". If I can\'t find it, please write it in ukrainian. ' +
-    'If you are teacher write /teacher anf your surname un ukrainian.' +
-  'If you want you can write your name and middle name. ' +
+    'If you are teacher write /teacher and your surname un ukrainian.' +
+  'If you want you can write your name and paternal name. ' +
     'e. g. "/teacher Шемсединов Тимур Гафарович"');
 });
 
@@ -49,8 +49,8 @@ bot.help(ctx => {
   ctx.reply('At first, choose your group. To do this,' +
     ' write /group and name of your group. e.g. "/group ip93".' +
     ' If I can\'t find it, please write it in ukrainian. If you' +
-    ' are teacher write /teacher anf your surname un ukrainian.' +
-  'If you want you can write your name and middle name.' +
+    ' are teacher write /teacher and your surname un ukrainian.' +
+  'If you want you can write your name and paternal name.' +
     ' e. g. "/teacher Шемсединов Тимур Гафарович"');
 });
 
