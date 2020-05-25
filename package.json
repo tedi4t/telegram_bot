@@ -3,7 +3,29 @@
   "version": "1.0.0",
   "dependencies": {
     "body-parser": "^1.18.0",
+    "eslint": "^6.4.0",
     "express": "^4.16.0",
-    "mongodb": "^3.5.7"
-  }
+    "mongodb": "^3.5.7",
+    "node-fetch": "^2.6.0"
+  },
+  "description": "To work with the bot, follow the link 'https://t.me/aefioiefjsrhfbsbjbot'.",
+  "main": "main.js",
+  "scripts": {
+    "test": "eslint ./Exercises"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tedi4t/telegram_bot.git"
+  },
+  "keywords": [
+    "Telegraf",
+    "bot",
+    "telegram"
+  ],
+  "author": "Uryn Dmytro",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tedi4t/telegram_bot/issues"
+  },
+  "homepage": "https://github.com/tedi4t/telegram_bot#readme"
 }
