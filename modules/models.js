@@ -76,10 +76,25 @@ const teacherScheduleSchema = mongoose.Schema({
 const teacherSchedule = mongoose.model('teacherSchedule', teacherScheduleSchema,
   'teacherSchedule');
 
+const generalSchema = mongoose.Schema({
+  baseName: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  content: {
+    type: Object,
+  },
+});
+
+const generalModel = mongoose.model('generalModel', generalSchema,
+  'telegram_bot');
+
 module.exports = {
   group,
   blockRooms,
   groupSchedule,
   teacher,
-  teacherSchedule
+  teacherSchedule,
+  generalModel
 };

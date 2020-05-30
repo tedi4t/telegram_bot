@@ -1,19 +1,20 @@
 'use strict';
 
 const { letterChanger, days, scheduleLessons } = require('./constantas.js');
-const fs = require('fs');
 const fetch = require('node-fetch');
 
-//chatID -> groupID
-const chatGroupID = readFile('./chatID/chatGroupID.txt');
-//chatID -> teacherID
-const chatTeacherID = readFile('./chatID/chatTeacherID.txt');
+const MODELS = require('../modules/models.js');
+const MONGO = require('../modules/mongo.js');
 
-const groupsBase = readFile('./base/groupsBase.txt');
-const studentSchedule = readFile('./base/studentSchedule.txt');
-const teachersBase = readFile('./base/teachersBase.txt');
-const teacherSchedule = readFile('./base/teachersSchedule.txt');
-const roomsSchedule = readFile('./base/roomsSchedule.txt');
+let groupsBase, studentSchedule, teachersBase, teacherSchedule, roomsSchedule;
+
+MONGO.openConnection().then(async function () {
+  groupsBase = await readMongo('groupsBase');
+  studentSchedule = await readMongo('studentSchedule');
+  teachersBase = await readMongo('teachersBase');
+  teacherSchedule = await readMongo('teachersSchedule');
+  roomsSchedule = await readMongo('roomsSchedule');
+});
 
 function findSecondsDate() {
   const date = new Date();
@@ -30,11 +31,12 @@ async function sendRequestAsync(url) {
   return data;
 }
 
-function readFile(path) {
-  try {
-    const file = JSON.parse(fs.readFileSync(path, 'utf8'));
-    return typeof file === 'object' ? file : {};
-  } catch (e) {
+async function readMongo(baseName) {
+  const data = (await MONGO.readFromMongo({ baseName }, MODELS.generalModel));
+  if (data)
+    return data.content;
+  else {
+    MONGO.writeToMongo({ baseName, content: {} }, MODELS.generalModel);
     return new Object();
   }
 }
@@ -74,7 +76,7 @@ function stringScheduleForDay(lessons) {
     const str = [`*${days[lessons[index].day_number]}*`];
     for (const lesson of lessons) {
       if (lesson)
-        str.push(`${lesson.lesson_number}. ${lesson.lesson_name}` +
+        str.push(`${lesson.lesson_number}. ${lesson.lesson_name} ` +
           `${lesson.lesson_type} ${lesson.lesson_room}`);
     }
     return str.join('\n');
@@ -121,14 +123,12 @@ function findCongruencesGroup(str) {
 
 function findLessonByNumb(lessons, numb) {
   for (const lesson of lessons) {
-    if (lesson.lesson_number == numb)
+    if (parseInt(lesson.lesson_number) === numb)
       return lesson;
   }
 }
 
-function replyOneDayStudent(ctx, week, day) {
-  const chatID = ctx.update.message.chat.id;
-  const groupID = chatGroupID[`${chatID}`];
+function replyOneDayStudent(ctx, week, day, groupID) {
   if (groupID) {
     if (!studentSchedule[groupID])
       ctx.reply('There aren\'t any lessons by this ID');
@@ -142,9 +142,7 @@ function replyOneDayStudent(ctx, week, day) {
   } else ctx.reply('Your group ID was not set!');
 }
 
-function replyWeekStudent(ctx, week) {
-  const chatID = ctx.update.message.chat.id;
-  const groupID = chatGroupID[chatID];
+function replyWeekStudent(ctx, week, groupID) {
   if (groupID) {
     if (!studentSchedule[groupID])
       ctx.reply('There aren\'t any lessons by this ID');
@@ -164,9 +162,7 @@ function replyWeekStudent(ctx, week) {
   } else ctx.reply('Your group ID was not set!');
 }
 
-function replyOneDayTeacher(ctx, week, day) {
-  const chatID = ctx.update.message.chat.id;
-  const teacherID = chatTeacherID[chatID];
+function replyOneDayTeacher(ctx, week, day, teacherID) {
   if (teacherID) {
     if (!teacherSchedule[teacherID])
       ctx.reply('There aren\'t any lessons by this ID');
@@ -180,9 +176,7 @@ function replyOneDayTeacher(ctx, week, day) {
   } else ctx.reply('Your teacher ID was not set!');
 }
 
-function replyWeekTeacher(ctx, week) {
-  const chatID = ctx.update.message.chat.id;
-  const teacherID = chatTeacherID[chatID];
+function replyWeekTeacher(ctx, week, teacherID) {
   if (teacherID) {
     const weekSchedule = [];
     if (!teacherSchedule[teacherID])
@@ -202,18 +196,17 @@ function replyWeekTeacher(ctx, week) {
   } else ctx.reply('Your teacher ID was not set!');
 }
 
-function findTeacherName(ctx, week) {
-  const chatID = ctx.update.message.chat.id;
+function findTeacherName(ctx, week, groupID) {
   const date = new Date();
   const day = date.getDay();
-  const schedule = studentSchedule[chatGroupID[chatID]][week][day];
+  const schedule = studentSchedule[groupID][week][day];
   const lessonNumb = findLessonNumb(date);
   const lesson = findLessonByNumb(schedule, lessonNumb);
-  const teacher = lesson.teachers.map(obj => obj.teacher_name).join(', ');
+  const teacher = lesson.teachers;
   return teacher;
 }
 
-function findBusyRooms(ctx, block, week) {
+function findBusyRooms(block, week) {
   const date = new Date();
   const day = date.getDay();
   const lessonNumb = findLessonNumb(date);
@@ -222,7 +215,7 @@ function findBusyRooms(ctx, block, week) {
 }
 
 module.exports = {
-  readFile,
+  readMongo,
   sendRequestAsync,
   findSecondsDate,
   parseGroupName,

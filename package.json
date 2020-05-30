@@ -5,8 +5,10 @@
     "body-parser": "^1.18.0",
     "eslint": "^6.4.0",
     "express": "^4.16.0",
+    "file-system": "^2.2.2",
     "mongodb": "^3.5.7",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.0",
+    "telegraf": "^3.38.0"
   },
   "description": "To work with the bot, follow the link 'https://t.me/aefioiefjsrhfbsbjbot'.",
   "main": "main.js",

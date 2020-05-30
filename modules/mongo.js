@@ -7,7 +7,7 @@ const { mongoURL } = require('./constantas.js');
 let db;
 
 async function openConnection() {
-  mongoose.connect(mongoURL);
+  mongoose.connect(mongoURL, { useNewUrlParser: true });
   db = mongoose.connection;
 }
 
@@ -16,16 +16,18 @@ async function readFromMongo(obj, model) {
 }
 
 async function writeToMongo(obj, Model) {
-  db.once('open', async function() {
     const model = new Model(obj);
     model.save(async function (err) {
       if (err) return console.log(err.message);
     });
-  });
 }
 
 async function closeConnection() {
   mongoose.connection.close();
+}
+
+async function overwrite(baseName, newObj, model) {
+  await model.replaceOne({ baseName }, newObj);
 }
 
 module.exports = {
@@ -33,4 +35,5 @@ module.exports = {
   readFromMongo,
   writeToMongo,
   closeConnection,
+  overwrite,
 };

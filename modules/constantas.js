@@ -42,10 +42,15 @@ const scheduleLessons = [
 
 const milliSecondsWeek = 604800000;
 
+const mongoURL = 'mongodb+srv://tedi4t:qazwsxedc@cluster0-9gang.mongodb.net/' +
+  'DATABASE?retryWrites=true&w=majority';
+
+
 module.exports = {
   letterChanger,
   days,
   scheduleLessons,
-  milliSecondsWeek
+  milliSecondsWeek,
+  mongoURL,
 };
 
