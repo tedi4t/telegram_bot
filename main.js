@@ -24,7 +24,7 @@ const { milliSecondsWeek } = require('./modules/constantas');
 const bot = new Telegraf(BOT_TOKEN, {polling: true});
 
 bot.telegram.setWebhook(`${BOT_URL}/bot${BOT_TOKEN}`);
-bot.startWebhook(`/bot${BOT_TOKEN}`, null, '0.0.0.0');
+bot.startWebhook(`/bot${BOT_TOKEN}`, null, process.env.PORT);
 
 let week;
 getWeek(false);
