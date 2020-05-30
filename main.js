@@ -21,7 +21,7 @@ MONGO.openConnection().then(async function() {
 const { BOT_TOKEN, BOT_URL } = require('./modules/config');
 const { milliSecondsWeek } = require('./modules/constantas');
 
-const bot = new Telegraf(BOT_TOKEN);
+const bot = new Telegraf(BOT_TOKEN, {polling: true});
 
 let week;
 getWeek(false);
@@ -207,5 +207,7 @@ bot.on('callback_query', ctx => {
   }
 });
 
-bot.telegram.setWebhook(`${BOT_URL}/bot${BOT_TOKEN}`);
-bot.startWebhook(`/bot${BOT_TOKEN}`, null, process.env.PORT);
+bot.launch();
+
+// bot.telegram.setWebhook(`${BOT_URL}/bot${BOT_TOKEN}`);
+// bot.startWebhook(`/bot${BOT_TOKEN}`, null, process.env.PORT);
