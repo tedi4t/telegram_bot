@@ -15,10 +15,11 @@ async function readFromMongo(obj, model) {
   return await model.findOne(obj);
 }
 
-async function writeToMongo(obj, Model) {
+async function writeToMongo(obj, Model, disconnect = false) {
     const model = new Model(obj);
     model.save(async function (err) {
       if (err) return console.log(err.message);
+      if (disconnect) closeConnection();
     });
 }
 

@@ -2,11 +2,11 @@
 
 const fetch = require('node-fetch');
 
-const MODELS = require('models.js');
-const MONGO = require('mongo.js');
+const MODELS = require('./models');
+const MONGO = require('./mongo');
 
 const minID = 5000, maxID = 8000;
-const teacherMinID = 0, teacherMaxID = 5020;
+const teacherMinID = 0, teacherMaxID = 6000;
 const amountOfBlocks = 37;
 
 async function sendRequestAsync(url) {
@@ -212,18 +212,10 @@ function makeRoomsSchedule(lessonsGroups) {
 }
 
 function getAllData () {
-  // MONGO.writeToMongo({ baseName: 'studentSchedule', content: { a: 10 } }, MODELS.generalModel);
   generateGroupBaseIDAsync(minID, maxID).then(groupsBase => {
     const allIDs = Object.keys(groupsBase);
     const minID = allIDs[0], maxID = allIDs[allIDs.length - 1];
-    // MONGO.writeToMongo({ baseName: 'studentSchedule', content: { a: 10 } }, MODELS.generalModel);
     generateLessonBaseIDAsync(minID, maxID, groupsBase).then(lessonsBase => {
-      console.log('1');
-      // console.log(lessonsBase);
-      // MONGO.writeToMongo({ baseName: 'studentSchedule', content: { a: 10 } }, MODELS.generalModel);
-      // fs.writeFileSync("studentSchedule.txt", JSON.stringify(generateSchedule(lessonsBase)));
-      // fs.writeFileSync("roomsSchedule.txt", JSON.stringify(makeRoomsSchedule(lessonsBase)));
-      // fs.writeFileSync("groupsBase.txt", JSON.stringify(groupsBase));
       MONGO.writeToMongo({ baseName: 'studentSchedule', content: generateSchedule(lessonsBase) }, MODELS.generalModel);
       MONGO.writeToMongo({ baseName: 'roomsSchedule', content: makeRoomsSchedule(lessonsBase) }, MODELS.generalModel);
       MONGO.writeToMongo({ baseName: 'groupsBase', content: groupsBase }, MODELS.generalModel);
@@ -233,11 +225,9 @@ function getAllData () {
     const allIDs = Object.keys(teachersBase);
     const minID = allIDs[0], maxID = allIDs[allIDs.length - 1];
     generateTeacherLessonBaseIDAsync(minID, maxID, teachersBase).then(teacherLessonBase => {
-      console.log('2');
-      // fs.writeFileSync("teachersBase.txt", JSON.stringify(teachersBase));
-      // fs.writeFileSync("teachersSchedule.txt", JSON.stringify(generateSchedule(teacherLessonBase)));
-      MONGO.writeToMongo({ baseName: 'teachersBase', content: teachersBase }, MODELS.generalModel);
-      MONGO.writeToMongo({ baseName: 'teachersSchedule', content: generateSchedule(teacherLessonBase) }, MODELS.generalModel)
+      MONGO.writeToMongo({ baseName: 'teachersBase', content: teachersBase }, MODELS.generalModel).then(() => {
+        MONGO.writeToMongo({ baseName: 'teachersSchedule', content: generateSchedule(teacherLessonBase) }, MODELS.generalModel, true);
+      })
     })
   });
 }
