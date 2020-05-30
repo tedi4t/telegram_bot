@@ -13,7 +13,8 @@
   "description": "To work with the bot, follow the link 'https://t.me/aefioiefjsrhfbsbjbot'.",
   "main": "main.js",
   "scripts": {
-    "test": "eslint ./Exercises"
+    "test": "eslint ./Exercises",
+    "start": "git add . && git commit -m 'fix' && git push heroku master"
   },
   "repository": {
     "type": "git",
