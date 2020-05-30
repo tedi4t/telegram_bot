@@ -14,7 +14,8 @@
   "main": "main.js",
   "scripts": {
     "test": "eslint ./Exercises",
-    "start": "git add . && git commit -m 'fix' && git push heroku master"
+    "start": "node main.js",
+    "run": "git add . && git commit -m 'fix' && git push heroku master"
   },
   "repository": {
     "type": "git",
