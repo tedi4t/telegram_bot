@@ -1,23 +1,19 @@
 'use strict';
 
-/*
+const fetch = require('node-fetch');
 
-0-10000 - 1304 groups;
-  5005 - 7315
+const MODELS = require('../modules/models.js');
+const MONGO = require('../modules/mongo.js');
 
- */
+const fs = require('fs');
 
-const fetch = require("node-fetch");
-
-const fs = require("fs");
-
-const minID = 0, maxID = 10000;
-const teacherMinID = 0, teacherMaxID = 8000;
+const minID = 5000, maxID = 8000;
+const teacherMinID = 0, teacherMaxID = 5200;
 const amountOfBlocks = 37;
 
 async function sendRequestAsync(url) {
-  let response = await fetch(url);
-  let data = await response.json();
+  const response = await fetch(url);
+  const data = await response.json();
   return data;
 }
 
@@ -45,16 +41,16 @@ async function generateBase(minID, maxID, generateURL, fields, checkObj) {
 }
 
 function generateGroupLessonsURl(groupID) {
-  return `https://api.rozklad.org.ua/v2/groups/${groupID}/lessons`
+  return `https://api.rozklad.org.ua/v2/groups/${groupID}/lessons`;
 }
 
 async function generateLessonBaseIDAsync(minID, maxID, checkObj){
   const interestingFields = {
     week: 'lesson_week', day_number: 'day_number', lesson_name: 'lesson_name',
     lesson_number: 'lesson_number', lesson_type: 'lesson_type', lesson_room: 'lesson_room',
-    room_id: ['rooms', '0', 'room_id'], teachers: 'teachers',
+    room_id: ['rooms', '0', 'room_id'],
   };  //list of field's names in our base(key) and analog in API(value)
-  return generateBase(minID, maxID, generateGroupLessonsURl, interestingFields, checkObj);
+  return await generateBase(minID, maxID, generateGroupLessonsURl, interestingFields, checkObj);
 }
 
 
@@ -218,25 +214,39 @@ function makeRoomsSchedule(lessonsGroups) {
 }
 
 function getAllData () {
+  // MONGO.writeToMongo({ baseName: 'studentSchedule', content: { a: 10 } }, MODELS.generalModel);
   generateGroupBaseIDAsync(minID, maxID).then(groupsBase => {
     const allIDs = Object.keys(groupsBase);
     const minID = allIDs[0], maxID = allIDs[allIDs.length - 1];
+    // MONGO.writeToMongo({ baseName: 'studentSchedule', content: { a: 10 } }, MODELS.generalModel);
     generateLessonBaseIDAsync(minID, maxID, groupsBase).then(lessonsBase => {
+      console.log('1');
       // console.log(lessonsBase);
-      fs.writeFileSync("studentSchedule.txt", JSON.stringify(generateSchedule(lessonsBase)));
-      fs.writeFileSync("roomsSchedule.txt", JSON.stringify(makeRoomsSchedule(lessonsBase)));
-      fs.writeFileSync("groupsBase.txt", JSON.stringify(groupsBase));
-      fs.writeFileSync("lessonsBase.txt", JSON.stringify(lessonsBase));
-    })
+      // MONGO.writeToMongo({ baseName: 'studentSchedule', content: { a: 10 } }, MODELS.generalModel);
+      // fs.writeFileSync("studentSchedule.txt", JSON.stringify(generateSchedule(lessonsBase)));
+      // fs.writeFileSync("roomsSchedule.txt", JSON.stringify(makeRoomsSchedule(lessonsBase)));
+      // fs.writeFileSync("groupsBase.txt", JSON.stringify(groupsBase));
+      MONGO.writeToMongo({ baseName: 'studentSchedule', content: generateSchedule(lessonsBase) }, MODELS.generalModel);
+      MONGO.writeToMongo({ baseName: 'roomsSchedule', content: makeRoomsSchedule(lessonsBase) }, MODELS.generalModel);
+      MONGO.writeToMongo({ baseName: 'groupsBase', content: groupsBase }, MODELS.generalModel);
+    });
   });
   generateTeachersBaseIDAsync(teacherMinID, teacherMaxID).then(teachersBase => {
     const allIDs = Object.keys(teachersBase);
     const minID = allIDs[0], maxID = allIDs[allIDs.length - 1];
     generateTeacherLessonBaseIDAsync(minID, maxID, teachersBase).then(teacherLessonBase => {
-      fs.writeFileSync("teachersBase.txt", JSON.stringify(teachersBase));
-      fs.writeFileSync("teachersSchedule.txt", JSON.stringify(generateSchedule(teacherLessonBase)));
+      console.log('2');
+      // fs.writeFileSync("teachersBase.txt", JSON.stringify(teachersBase));
+      // fs.writeFileSync("teachersSchedule.txt", JSON.stringify(generateSchedule(teacherLessonBase)));
+      MONGO.writeToMongo({ baseName: 'teachersBase', content: teachersBase }, MODELS.generalModel).then(() => {
+        MONGO.writeToMongo({ baseName: 'teachersSchedule', content: generateSchedule(teacherLessonBase) }, MODELS.generalModel).then(() => {
+          MONGO.closeConnection();
+        })
+      });
+
     })
   });
 }
 
-getAllData();
+MONGO.openConnection()
+  .then(() => getAllData());
