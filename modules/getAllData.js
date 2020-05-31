@@ -84,9 +84,9 @@ async function generateGroupBaseIDAsync(minID, maxID) {
 function sortByWeek(lessons) {
   const sorted = [];
   for (const lesson of lessons) {
-    if (sorted[parseInt(lesson.week)])
-      sorted[parseInt(lesson.week)].push(lesson);
-    else sorted[parseInt(lesson.week)] = [lesson];
+    if (sorted[parseInt(lesson.week, 10)])
+      sorted[parseInt(lesson.week, 10)].push(lesson);
+    else sorted[parseInt(lesson.week, 10)] = [lesson];
   }
   return sorted;
 }
@@ -168,7 +168,7 @@ async function generateTeachersBaseIDAsync(minID, maxID) {
 
 function parseRoom(room) {
   const roomArr = room.split('-');
-  const block = parseInt(roomArr[roomArr.length - 1]);
+  const block = parseInt(roomArr[roomArr.length - 1], 10);
   const audience = roomArr.slice(0, roomArr.length - 1).join('-');
   return { block, audience, full_name: room };
 }

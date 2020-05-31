@@ -53,7 +53,7 @@ function parseGroupName(str) {
     const parsedNameArr = [];
     parsedNameArr[2] = '-';
     for (const index in arr) {
-      const indInt = parseInt(index);
+      const indInt = parseInt(index, 10);
       const value = arr[index];
       const changer = letterChanger[value];
       if (parsedNameArr[indInt]) {
@@ -88,7 +88,7 @@ function findLessonNumb(date) {
   for (const lessonNumb in scheduleLessons) {
     const lesson = scheduleLessons[lessonNumb];
     if (lesson.condition(time))
-      return parseInt(lessonNumb) + 1;
+      return parseInt(lessonNumb, 10) + 1;
   }
 }
 
@@ -98,7 +98,7 @@ function findCongruencesTeacher(enteredArr) {
     let converged = true;
     const nameArr = teachersBase[id].toLowerCase().split(' ');
     for (const index in enteredArr) {
-      if (parseInt(index) === 0) {
+      if (parseInt(index, 10) === 0) {
         if (nameArr[index].localeCompare(enteredArr[index]) !== 0)
           converged = false;
       } else if (converged && nameArr[index] && enteredArr[index]) {
@@ -123,7 +123,7 @@ function findCongruencesGroup(str) {
 
 function findLessonByNumb(lessons, numb) {
   for (const lesson of lessons) {
-    if (parseInt(lesson.lesson_number) === numb)
+    if (parseInt(lesson.lesson_number, 10) === numb)
       return lesson;
   }
 }
