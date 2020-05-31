@@ -11,20 +11,20 @@ const MONGO = require('./modules/mongo.js');
 // //chatID -> teacherID
 // const chatTeacherID = FUNCTIONS.readFile('./chatID/chatTeacherID.txt');
 
+const { BOT_TOKEN, BOT_URL } = require('./modules/config');
+const { milliSecondsWeek } = require('./modules/constantas');
+
+const bot = new Telegraf(BOT_TOKEN);
+
+bot.telegram.setWebhook(`${BOT_URL}/bot${BOT_TOKEN}`);
+bot.startWebhook(`/bot${BOT_TOKEN}`, null, process.env.PORT);
+
 let chatGroupID, chatTeacherID;
 
 MONGO.openConnection().then(async function() {
   chatGroupID = await FUNCTIONS.readMongo('chatGroupID');
   chatTeacherID = await FUNCTIONS.readMongo('chatTeacherID');
 });
-
-const { BOT_TOKEN, BOT_URL } = require('./modules/config');
-const { milliSecondsWeek } = require('./modules/constantas');
-
-const bot = new Telegraf(BOT_TOKEN, { webHook: { port: process.env.PORT } });
-
-bot.telegram.setWebhook(`${BOT_URL}/bot${BOT_TOKEN}`);
-bot.startWebhook(`/bot${BOT_TOKEN}`, null, process.env.PORT);
 
 let week;
 getWeek(false);
