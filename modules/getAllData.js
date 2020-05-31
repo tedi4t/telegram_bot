@@ -181,7 +181,7 @@ function createArrOfBusyRooms(lessonsForAllGroups) {
       const week = lesson.week, day_number = lesson.day_number,
         lesson_number = lesson.lesson_number,
         rooms = lesson.lesson_room.split(',');
-      function addRoom(room) {
+      rooms.map(room => {
         const parsedRoom = parseRoom(room);
         const block = parsedRoom.block;
         if (block && parsedRoom.full_name && block <= amountOfBlocks) {
@@ -195,8 +195,7 @@ function createArrOfBusyRooms(lessonsForAllGroups) {
           else busyRooms[block][week][day_number][lesson_number]
             .push(parsedRoom.full_name);
         }
-      }
-      rooms.map(room => addRoom(room));
+      });
     }
   }
   return busyRooms;
