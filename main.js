@@ -6,11 +6,6 @@ const FUNCTIONS = require('./modules/functions');
 const MODELS = require('./modules/models.js');
 const MONGO = require('./modules/mongo.js');
 
-// //chatID -> groupID
-// const chatGroupID = FUNCTIONS.readFile('./chatID/chatGroupID.txt');
-// //chatID -> teacherID
-// const chatTeacherID = FUNCTIONS.readFile('./chatID/chatTeacherID.txt');
-
 const { BOT_TOKEN, BOT_URL } = require('./modules/config');
 const { milliSecondsWeek } = require('./modules/constantas');
 

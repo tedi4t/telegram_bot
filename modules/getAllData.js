@@ -56,9 +56,7 @@ async function generateLessonBaseIDAsync(minID, maxID, checkObj) {
     interestingFields, checkObj);
 }
 
-
 //groupsBase
-
 
 function generateGroupURl(groupID) {
   return `https://api.rozklad.org.ua/v2/groups/${groupID}`;
@@ -79,7 +77,6 @@ async function generateGroupBaseIDAsync(minID, maxID) {
 }
 
 //students Schedule
-
 
 function sortByWeek(lessons) {
   const sorted = [];
@@ -116,9 +113,7 @@ function generateSchedule(lessons) {
   return schedule;
 }
 
-
 //teachers and teachers schedule
-
 
 function generateTeacherLessonsURl(teacherID) {
   return `https://api.rozklad.org.ua/v2/teachers/${teacherID}/lessons`;
@@ -134,7 +129,6 @@ async function generateTeacherLessonBaseIDAsync(minID, maxID, checkObj) {
   return generateBase(minID, maxID, generateTeacherLessonsURl,
     interestingFields, checkObj);
 }
-
 
 //teachersBase
 
@@ -200,8 +194,6 @@ function createArrOfBusyRooms(lessonsForAllGroups) {
   }
   return busyRooms;
 }
-
-//block -> week -> day -> lesson number
 
 function sortArrOfBusyRooms(busyRooms) {
   const sortedArr = {};
