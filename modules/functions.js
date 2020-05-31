@@ -8,7 +8,7 @@ const MONGO = require('../modules/mongo.js');
 
 let groupsBase, studentSchedule, teachersBase, teacherSchedule, roomsSchedule;
 
-MONGO.openConnection().then(async function () {
+MONGO.openConnection().then(async () => {
   groupsBase = await readMongo('groupsBase');
   studentSchedule = await readMongo('studentSchedule');
   teachersBase = await readMongo('teachersBase');

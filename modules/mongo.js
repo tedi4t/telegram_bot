@@ -16,11 +16,11 @@ async function readFromMongo(obj, model) {
 }
 
 async function writeToMongo(obj, Model, disconnect = false) {
-    const model = new Model(obj);
-    model.save(async function (err) {
-      if (err) return console.log(err.message);
-      if (disconnect) closeConnection();
-    });
+  const model = new Model(obj);
+  model.save(async err => {
+    if (err) return console.log(err.message);
+    if (disconnect) closeConnection();
+  });
 }
 
 async function closeConnection() {
