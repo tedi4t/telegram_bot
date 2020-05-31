@@ -21,7 +21,7 @@ bot.startWebhook(`/bot${BOT_TOKEN}`, null, process.env.PORT);
 
 let chatGroupID, chatTeacherID;
 
-MONGO.openConnection().then(async function() {
+MONGO.openConnection().then(async () => {
   chatGroupID = await FUNCTIONS.readMongo('chatGroupID');
   chatTeacherID = await FUNCTIONS.readMongo('chatTeacherID');
 });
@@ -131,7 +131,10 @@ bot.command('/teacher', ctx => {
       } else {
         const keyboard = [];
         for (const teacher of congruences)
-          keyboard.push([{ text: teacher.name, callback_data: `teacher ${teacher.id}` }]);
+          keyboard.push([{
+            text: teacher.name,
+            callback_data: `teacher ${teacher.id}`
+          }]);
         sendInlineKeyboardMessage(ctx.message.chat.id, keyboard);
       }
     } else {

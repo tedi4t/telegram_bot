@@ -14,9 +14,9 @@
   "description": "To work with the bot, follow the link 'https://t.me/aefioiefjsrhfbsbjbot'.",
   "main": "main.js",
   "scripts": {
-    "test": "eslint ./Exercises",
-    "start": "node main.js",
-    "run": "git add . && git commit -m 'fix' && git push heroku master"
+    "test": "eslint ./modules",
+    "run": "git add . && git commit -m 'fix' && git push heroku master",
+    "start": "node main.js"
   },
   "repository": {
     "type": "git",
