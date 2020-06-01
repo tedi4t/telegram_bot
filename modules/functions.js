@@ -86,6 +86,7 @@ function stringScheduleForDay(lessons) {
 function findLessonNumb(date) {
   const time = date.getHours() * 60 + date.getMinutes();
   console.log({ time });
+  console.log({ offset: date.getTimezoneOffset() });
   for (const lessonNumb in scheduleLessons) {
     const lesson = scheduleLessons[lessonNumb];
     if (lesson.condition(time))
