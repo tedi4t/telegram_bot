@@ -45,6 +45,7 @@ const milliSecondsWeek = 604800000;
 const mongoURL = 'mongodb+srv://tedi4t:qazwsxedc@cluster0-9gang.mongodb.net/' +
   'DATABASE?retryWrites=true&w=majority';
 
+const timezoneOffset = 3 * 60 * 60 * 1000;
 
 module.exports = {
   letterChanger,
@@ -52,5 +53,6 @@ module.exports = {
   scheduleLessons,
   milliSecondsWeek,
   mongoURL,
+  timezoneOffset,
 };
 

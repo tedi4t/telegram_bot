@@ -1,6 +1,7 @@
 'use strict';
 
-const { letterChanger, days, scheduleLessons } = require('./constantas.js');
+const { letterChanger, days, scheduleLessons,
+  timezoneOffset } = require('./constantas.js');
 const fetch = require('node-fetch');
 
 const MODELS = require('../modules/models.js');
@@ -18,6 +19,7 @@ MONGO.openConnection().then(async () => {
 
 function findSecondsDate() {
   const date = new Date();
+  date.setTime(date.getTime() + timezoneOffset);
   const day = date.getDay() - 1;
   const hours = date.getHours();
   const minutes = date.getMinutes();
@@ -85,8 +87,6 @@ function stringScheduleForDay(lessons) {
 
 function findLessonNumb(date) {
   const time = date.getHours() * 60 + date.getMinutes();
-  console.log({ time });
-  console.log({ offset: date.getTimezoneOffset() });
   for (const lessonNumb in scheduleLessons) {
     const lesson = scheduleLessons[lessonNumb];
     if (lesson.condition(time))
@@ -200,6 +200,7 @@ function replyWeekTeacher(ctx, week, teacherID) {
 
 function findTeacherName(ctx, week, groupID) {
   const date = new Date();
+  date.setTime(date.getTime() + timezoneOffset);
   const day = date.getDay();
   const schedule = studentSchedule[groupID][week][day];
   const lessonNumb = findLessonNumb(date);
@@ -210,6 +211,7 @@ function findTeacherName(ctx, week, groupID) {
 
 function findBusyRooms(block, week) {
   const date = new Date();
+  date.setTime(date.getTime() + timezoneOffset);
   const day = date.getDay();
   const lessonNumb = findLessonNumb(date);
   const rooms = roomsSchedule[block][week][day][lessonNumb];
