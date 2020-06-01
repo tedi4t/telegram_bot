@@ -60,7 +60,7 @@ bot.help(ctx => {
     ' e. g. "/teacher Шемсединов Тимур Гафарович"');
 });
 
-bot.command('/group', ctx => {
+bot.command(['/group', '/group@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const parsedCommand = FUNCTIONS.parseCommandText(ctx.update.message.text)[0];
   const enteredGroup = FUNCTIONS.parseGroupName(parsedCommand);
@@ -84,14 +84,14 @@ bot.command('/group', ctx => {
   }
 });
 
-bot.command('/today', ctx => {
+bot.command(['/today', '/today@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const groupID = chatGroupID[`${chatID}`];
   const day = new Date().getDay();
   FUNCTIONS.replyOneDayStudent(ctx, week, day, groupID);
 });
 
-bot.command('/tomorrow', ctx => {
+bot.command(['/tomorrow', '/tomorrow@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const groupID = chatGroupID[`${chatID}`];
   const day = new Date().getDay();
@@ -100,19 +100,19 @@ bot.command('/tomorrow', ctx => {
   else FUNCTIONS.replyOneDayStudent(ctx, week, day + 1, groupID);
 });
 
-bot.command('/week', ctx => {
+bot.command(['/week', '/week@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const groupID = chatGroupID[`${chatID}`];
   FUNCTIONS.replyWeekStudent(ctx, week, groupID);
 });
 
-bot.command('/nextweek', ctx => {
+bot.command(['/nextweek', '/nextweek@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const groupID = chatGroupID[`${chatID}`];
   FUNCTIONS.replyWeekStudent(ctx, week % 2 + 1, groupID);
 });
 
-bot.command('/teacher', ctx => {
+bot.command(['/teacher', '/teacher@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const enteredNameArr = FUNCTIONS.parseCommandText(ctx.update.message.text);
   if (enteredNameArr.length) {
@@ -138,14 +138,14 @@ bot.command('/teacher', ctx => {
   }
 });
 
-bot.command('/teachertoday', ctx => {
+bot.command(['/teachertoday', '/teachertoday@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const teacherID = chatTeacherID[chatID];
   const day = new Date().getDay();
   FUNCTIONS.replyOneDayTeacher(ctx, week, day, teacherID);
 });
 
-bot.command('/teachertomorrow', ctx => {
+bot.command(['/teachertomorrow', '/teachertomorrow@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const teacherID = chatTeacherID[chatID];
   const day = new Date().getDay();
@@ -154,19 +154,19 @@ bot.command('/teachertomorrow', ctx => {
   else FUNCTIONS.replyOneDayTeacher(ctx, week, day + 1, teacherID);
 });
 
-bot.command('/teacherweek', ctx => {
+bot.command(['/teacherweek', '/teacherweek@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const teacherID = chatTeacherID[chatID];
   FUNCTIONS.replyWeekTeacher(ctx, week, teacherID);
 });
 
-bot.command('/teachernextweek', ctx => {
+bot.command(['/teachernextweek', '/teachernextweek@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const teacherID = chatTeacherID[chatID];
   FUNCTIONS.replyWeekTeacher(ctx, week % 2 + 1, teacherID);
 });
 
-bot.command('/busyrooms', ctx => {
+bot.command(['/busyrooms', '/busyrooms@aefioiefjsrhfbsbjbot'], ctx => {
   const block = FUNCTIONS.parseCommandText(ctx.update.message.text)[0];
   try {
     ctx.reply(FUNCTIONS.findBusyRooms(block, week).join(', '));
@@ -175,7 +175,7 @@ bot.command('/busyrooms', ctx => {
   }
 });
 
-bot.command('/name', ctx => {
+bot.command(['/name', '/name@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const groupID = chatGroupID[`${chatID}`];
   try {
