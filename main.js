@@ -75,7 +75,10 @@ bot.command(['/group', '/group@aefioiefjsrhfbsbjbot'], ctx => {
       } else {
         const keyboard = [];
         for (const group of congruences)
-          keyboard.push([{ text: group.name, callback_data: `group ${group.id}` }]);
+          keyboard.push([{
+            text: group.name,
+            callback_data: `group ${group.id}`
+          }]);
         sendInlineKeyboardMessage(ctx.message.chat.id, keyboard);
       }
     } else {
@@ -120,7 +123,10 @@ bot.command(['/teacher', '/teacher@aefioiefjsrhfbsbjbot'], ctx => {
     if (congruences.length > 0) {
       if (congruences.length === 1) {
         chatTeacherID[chatID] = congruences[0].id;
-        const newObjMongo = { baseName: 'chatTeacherID', content: chatTeacherID };
+        const newObjMongo = {
+          baseName: 'chatTeacherID',
+          content: chatTeacherID
+        };
         MONGO.overwrite('chatTeacherID', newObjMongo, MODELS.generalModel);
         ctx.reply('Your name was set');
       } else {
@@ -145,7 +151,8 @@ bot.command(['/teachertoday', '/teachertoday@aefioiefjsrhfbsbjbot'], ctx => {
   FUNCTIONS.replyOneDayTeacher(ctx, week, day, teacherID);
 });
 
-bot.command(['/teachertomorrow', '/teachertomorrow@aefioiefjsrhfbsbjbot'], ctx => {
+bot.command(['/teachertomorrow',
+  '/teachertomorrow@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const teacherID = chatTeacherID[chatID];
   const day = new Date().getDay();
@@ -160,7 +167,8 @@ bot.command(['/teacherweek', '/teacherweek@aefioiefjsrhfbsbjbot'], ctx => {
   FUNCTIONS.replyWeekTeacher(ctx, week, teacherID);
 });
 
-bot.command(['/teachernextweek', '/teachernextweek@aefioiefjsrhfbsbjbot'], ctx => {
+bot.command(['/teachernextweek',
+  '/teachernextweek@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const teacherID = chatTeacherID[chatID];
   FUNCTIONS.replyWeekTeacher(ctx, week % 2 + 1, teacherID);
