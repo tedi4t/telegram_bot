@@ -37,7 +37,9 @@ async function generateBase(minID, maxID, generateURL, fields, checkObj) {
         group.push(lessonSorted);
       }
       base[ID] = group;
-    } else delete checkObj[ID];
+    } else {
+      delete checkObj[ID];
+    }
   }
   return base;
 }
@@ -177,19 +179,19 @@ function createArrOfBusyRooms(lessonsForAllGroups) {
       const week = lesson.week, dayNumber = lesson.dayNumber,
         lessonNumber = lesson.lessonNumber,
         rooms = lesson.lesson_room.split(',');
-      rooms.map(room => {
+      rooms.forEach(room => {
         const parsedRoom = parseRoom(room);
         const block = parsedRoom.block;
-        if (block && parsedRoom.full_name && block <= amountOfBlocks) {
-          if (!busyRooms[block]) busyRooms[block] = [];
-          if (!busyRooms[block][week]) busyRooms[block][week] = [];
-          if (!busyRooms[block][week][dayNumber])
-            busyRooms[block][week][dayNumber] = [];
-          if (!busyRooms[block][week][dayNumber][lessonNumber])
-            busyRooms[block][week][dayNumber][lessonNumber] =
-              [parsedRoom.fullName];
-          else busyRooms[block][week][dayNumber][lessonNumber]
-            .push(parsedRoom.fullName);
+        if (block && parsedRoom.fullName && block <= amountOfBlocks) {
+          busyRooms[block] = busyRooms[block] || [];
+          busyRooms[block][week] = busyRooms[block][week] || [];
+          const busyRoomsWeek = busyRooms[block][week];
+          busyRoomsWeek[dayNumber] = busyRoomsWeek[dayNumber] || [];
+          const busyRoomsDay = busyRoomsWeek[dayNumber];
+          let busyRoomsLesson = busyRoomsDay[lessonNumber];
+          if (!busyRoomsLesson)
+            busyRoomsLesson = [parsedRoom.fullName];
+          else busyRoomsLesson.push(parsedRoom.fullName);
         }
       });
     }
@@ -201,17 +203,20 @@ function sortArrOfBusyRooms(busyRooms) {
   const sortedArr = {};
   for (const block in busyRooms) {
     sortedArr[block] = [];
+    const sortedArrBlock = sortedArr[block];
     const blockRooms = busyRooms[block];
     for (const week in blockRooms) {
-      sortedArr[block][week] = [];
-      const weekRooms = busyRooms[block][week];
+      sortedArrBlock[week] = [];
+      const sortedArrWeek = sortedArrBlock[week];
+      const weekRooms = blockRooms[week];
       for (const day in weekRooms) {
-        sortedArr[block][week][day] = [];
-        const dayRooms = busyRooms[block][week][day];
+        sortedArrWeek[day] = [];
+        const sortedArrDay = sortedArrWeek[day];
+        const dayRooms = weekRooms[day];
         for (const lesson in dayRooms) {
-          const lessonRooms = busyRooms[block][week][day][lesson]
+          const lessonRooms = dayRooms[lesson]
             .sort((a, b) => a.localeCompare(b));
-          sortedArr[block][week][day][lesson] = lessonRooms;
+          sortedArrDay[lesson] = lessonRooms;
         }
       }
     }

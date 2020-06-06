@@ -64,26 +64,24 @@ bot.command(['/group', '/group@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const parsedCommand = FUNCTIONS.parseCommandText(ctx.update.message.text)[0];
   const enteredGroup = FUNCTIONS.parseGroupName(parsedCommand);
-  if (enteredGroup) {
+  try {
     const congruences = FUNCTIONS.findCongruencesGroup(enteredGroup);
-    if (congruences.length > 0) {
-      if (congruences.length === 1) {
-        chatGroupID[chatID] = congruences[0].id;
-        const newObjMongo = { baseName: 'chatGroupID', content: chatGroupID };
-        MONGO.overwrite('chatGroupID', newObjMongo, MODELS.generalModel);
-        ctx.reply('Your group was set');
-      } else {
-        const keyboard = [];
-        for (const group of congruences)
-          keyboard.push([{
-            text: group.name,
-            callback_data: `group ${group.id}`
-          }]);
-        sendInlineKeyboardMessage(ctx.message.chat.id, keyboard);
-      }
+    if (congruences.length === 1) {
+      chatGroupID[chatID] = congruences[0].id;
+      const newObjMongo = { baseName: 'chatGroupID', content: chatGroupID };
+      MONGO.overwrite('chatGroupID', newObjMongo, MODELS.generalModel);
+      ctx.reply('Your group was set');
     } else {
-      ctx.reply('Can\'t find group\'s name');
+      const keyboard = [];
+      for (const group of congruences)
+        keyboard.push([{
+          text: group.name,
+          callback_data: `group ${group.id}`
+        }]);
+      sendInlineKeyboardMessage(ctx.message.chat.id, keyboard);
     }
+  } catch (e) {
+    ctx.reply('Can\'t find group\'s name');
   }
 });
 
@@ -118,29 +116,27 @@ bot.command(['/nextweek', '/nextweek@aefioiefjsrhfbsbjbot'], ctx => {
 bot.command(['/teacher', '/teacher@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const enteredNameArr = FUNCTIONS.parseCommandText(ctx.update.message.text);
-  if (enteredNameArr.length) {
+  try {
     const congruences = FUNCTIONS.findCongruencesTeacher(enteredNameArr);
-    if (congruences.length > 0) {
-      if (congruences.length === 1) {
-        chatTeacherID[chatID] = congruences[0].id;
-        const newObjMongo = {
-          baseName: 'chatTeacherID',
-          content: chatTeacherID
-        };
-        MONGO.overwrite('chatTeacherID', newObjMongo, MODELS.generalModel);
-        ctx.reply('Your name was set');
-      } else {
-        const keyboard = [];
-        for (const teacher of congruences)
-          keyboard.push([{
-            text: teacher.name,
-            callback_data: `teacher ${teacher.id}`
-          }]);
-        sendInlineKeyboardMessage(ctx.message.chat.id, keyboard);
-      }
+    if (congruences.length === 1) {
+      chatTeacherID[chatID] = congruences[0].id;
+      const newObjMongo = {
+        baseName: 'chatTeacherID',
+        content: chatTeacherID
+      };
+      MONGO.overwrite('chatTeacherID', newObjMongo, MODELS.generalModel);
+      ctx.reply('Your name was set');
     } else {
-      ctx.reply('Can\'t find teacher\'s name');
+      const keyboard = [];
+      for (const teacher of congruences)
+        keyboard.push([{
+          text: teacher.name,
+          callback_data: `teacher ${teacher.id}`
+        }]);
+      sendInlineKeyboardMessage(ctx.message.chat.id, keyboard);
     }
+  } catch {
+    ctx.reply('Can\'t find teacher\'s name');
   }
 });
 
@@ -215,4 +211,3 @@ bot.on('callback_query', ctx => {
     ctx.reply('Your group was set');
   }
 });
-

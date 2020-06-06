@@ -56,24 +56,20 @@ function parseCommandText(str) {
 }
 
 function parseGroupName(str) {
-  if (str) {
-    const arr = str.split('');
-    const parsedNameArr = [];
-    parsedNameArr[2] = '-';
-    for (const index in arr) {
-      const indInt = parseInt(index, 10);
-      const value = arr[index];
-      const changer = letterChanger[value];
-      if (parsedNameArr[indInt]) {
-        if (changer)
-          parsedNameArr[indInt + 1] = changer;
-        else parsedNameArr[indInt + 1] = value;
-      } else if (changer)
-        parsedNameArr[indInt] = changer;
-      else parsedNameArr[indInt] = value;
+  const arr = str.split('');
+  const parsedNameArr = [];
+  parsedNameArr[2] = '-';
+  for (const index in arr) {
+    const indInt = parseInt(index, 10);
+    const value = arr[index];
+    const changer = letterChanger[value];
+    if (parsedNameArr[indInt]) {
+      parsedNameArr[indInt + 1] = changer || value;
+    } else {
+      parsedNameArr[indInt] = changer || value;
     }
-    return parsedNameArr.join('');
   }
+  return parsedNameArr.join('');
 }
 
 function stringScheduleForDay(lessons) {
@@ -101,20 +97,25 @@ function findLessonNumb(date) {
   }
 }
 
+function convergeTeacherName(enteredArr, nameArr) {
+  let converged = true;
+  for (const index in enteredArr) {
+    if (parseInt(index, 10) === 0 &&
+      nameArr[index].localeCompare(enteredArr[index]) !== 0) {
+        converged = false;
+    } else if (converged && nameArr[index] && enteredArr[index] &&
+      nameArr[index][0] !== enteredArr[index][0]) {
+      converged = false;
+    }
+  }
+  return converged;
+}
+
 function findCongruencesTeacher(enteredArr) {
   const congruences = [];
   for (const id in teachersBase) {
-    let converged = true;
     const nameArr = teachersBase[id].toLowerCase().split(' ');
-    for (const index in enteredArr) {
-      if (parseInt(index, 10) === 0) {
-        if (nameArr[index].localeCompare(enteredArr[index]) !== 0)
-          converged = false;
-      } else if (converged && nameArr[index] && enteredArr[index]) {
-        if (nameArr[index][0] !== enteredArr[index][0])
-          converged = false;
-      }
-    }
+    const converged = convergeTeacherName(enteredArr, nameArr);
     if (converged) congruences.push({ id, name: nameArr.join(' ') });
   }
   return congruences;
@@ -139,36 +140,28 @@ function findLessonByNumb(lessons, numb) {
 
 function replyOneDayStudent(ctx, week, day, groupID) {
   if (groupID) {
-    if (!studentSchedule[groupID])
-      ctx.reply('There aren\'t any lessons by this ID');
-    else {
-      const schedule = studentSchedule[groupID][week][day];
-      const scheduleDay = stringScheduleForDay(schedule);
-      if (scheduleDay)
-        ctx.reply(scheduleDay, { parse_mode: 'Markdown' });
-      else ctx.reply('You don\'t have any lessons');
-    }
+    const schedule = studentSchedule[groupID][week][day];
+    const scheduleDay = stringScheduleForDay(schedule);
+    if (scheduleDay)
+      ctx.reply(scheduleDay, { parse_mode: 'Markdown' });
+    else ctx.reply('You don\'t have any lessons');
   } else ctx.reply('Your group ID was not set!');
 }
 
 function replyWeekStudent(ctx, week, groupID) {
   if (groupID) {
-    if (!studentSchedule[groupID])
-      ctx.reply('There aren\'t any lessons by this ID');
-    else {
-      const weekSchedule = [];
-      const dayInWeek = 7;
-      for (let day = 1; day <= dayInWeek; day++) {
-        const schedule = studentSchedule[groupID][week][day];
-        const daySchedule = stringScheduleForDay(schedule);
-        if (daySchedule)
-          weekSchedule.push(daySchedule);
-      }
-      const schedule = weekSchedule.join('\n\n');
-      if (schedule)
-        ctx.reply(weekSchedule.join('\n\n'), { parse_mode: 'Markdown' });
-      else ctx.reply('You don\'t have lessons');
+    const weekSchedule = [];
+    const dayInWeek = 7;
+    for (let day = 1; day <= dayInWeek; day++) {
+      const schedule = studentSchedule[groupID][week][day];
+      const daySchedule = stringScheduleForDay(schedule);
+      if (daySchedule)
+        weekSchedule.push(daySchedule);
     }
+    const schedule = weekSchedule.join('\n\n');
+    if (schedule)
+      ctx.reply(weekSchedule.join('\n\n'), { parse_mode: 'Markdown' });
+    else ctx.reply('You don\'t have lessons');
   } else ctx.reply('Your group ID was not set!');
 }
 
@@ -189,21 +182,15 @@ function replyOneDayTeacher(ctx, week, day, teacherID) {
 function replyWeekTeacher(ctx, week, teacherID) {
   if (teacherID) {
     const weekSchedule = [];
-    if (!teacherSchedule[teacherID])
-      ctx.reply('There aren\'t any lessons by this ID');
-    else {
-      const dayInWeek = 7;
-      for (let day = 1; day <= dayInWeek; day++) {
-        const schedule = teacherSchedule[teacherID][week][day];
-        const daySchedule = stringScheduleForDay(schedule);
-        if (daySchedule)
-          weekSchedule.push(daySchedule);
-      }
-      const schedule = weekSchedule.join('\n\n');
-      if (schedule)
-        ctx.reply(weekSchedule.join('\n\n'), { parse_mode: 'Markdown' });
-      else ctx.reply('You don\'t have lessons');
+    const dayInWeek = 7;
+    for (let day = 1; day <= dayInWeek; day++) {
+      const schedule = teacherSchedule[teacherID][week][day];
+      const daySchedule = stringScheduleForDay(schedule);
+      if (daySchedule)
+        weekSchedule.push(daySchedule);
     }
+    const schedule = weekSchedule.join('\n\n');
+    ctx.reply(schedule, { parse_mode: 'Markdown' });
   } else ctx.reply('Your teacher ID was not set!');
 }
 
