@@ -171,6 +171,16 @@ function parseRoom(room) {
   return { block, audience, fullName: room };
 }
 
+function assignArrForWeekRooms() {
+  const weeks = 2;
+  const days = 7;
+  const lessonsPerDay = 4;
+  const Arr = Array.from({ length: weeks },
+    (() => Array.from({ length: days },
+      (() => Array.from({ length: lessonsPerDay }, (() => []))))));
+  return Arr;
+}
+
 function createArrOfBusyRooms(lessonsForAllGroups) {
   const busyRooms = {}; //block -> week -> day -> lesson number
   for (const groupID in lessonsForAllGroups) {
@@ -183,12 +193,8 @@ function createArrOfBusyRooms(lessonsForAllGroups) {
         const parsedRoom = parseRoom(room);
         const block = parsedRoom.block;
         if (block && parsedRoom.fullName && block <= amountOfBlocks) {
-          busyRooms[block] = busyRooms[block] || [];
-          busyRooms[block][week] = busyRooms[block][week] || [];
-          const busyRoomsWeek = busyRooms[block][week];
-          busyRoomsWeek[dayNumber] = busyRoomsWeek[dayNumber] || [];
-          const busyRoomsDay = busyRoomsWeek[dayNumber];
-          let busyRoomsLesson = busyRoomsDay[lessonNumber];
+          busyRooms[block] = busyRooms[block] || assignArrForWeekRooms();
+          let busyRoomsLesson = busyRooms[block][week][dayNumber][lessonNumber];
           if (!busyRoomsLesson)
             busyRoomsLesson = [parsedRoom.fullName];
           else busyRoomsLesson.push(parsedRoom.fullName);
