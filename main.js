@@ -6,13 +6,13 @@ const FUNCTIONS = require('./modules/functions');
 const MODELS = require('./modules/models.js');
 const MONGO = require('./modules/mongo.js');
 
-const { BOT_TOKEN, BOT_URL } = require('./modules/config');
+const { TOKEN, URL } = require('./modules/config');
 const { milliSecondsWeek } = require('./modules/constantas');
 
-const bot = new Telegraf(BOT_TOKEN);
+const bot = new Telegraf(TOKEN);
 
-bot.telegram.setWebhook(`${BOT_URL}/bot${BOT_TOKEN}`);
-bot.startWebhook(`/bot${BOT_TOKEN}`, null, process.env.PORT);
+bot.telegram.setWebhook(`${URL}/bot${TOKEN}`);
+bot.startWebhook(`/bot${TOKEN}`, null, process.env.PORT);
 
 let chatGroupID, chatTeacherID;
 

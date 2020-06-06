@@ -24,16 +24,16 @@ async function generateBase(minID, maxID, generateURL, fields, checkObj) {
     const group = [];
     if (lessons) {
       for (const lesson of lessons) {
-        const lesson_sorted = {};
+        const lessonSorted = {};
         for (const field in fields) {
-          const API_key = fields[field]; // field's key in API
-          if (Array.isArray(API_key))
-            lesson_sorted[field] = API_key.reduce((val, key) =>
+          const apiKey = fields[field]; // field's key in API
+          if (Array.isArray(apiKey))
+            lessonSorted[field] = apiKey.reduce((val, key) =>
               (val ? (typeof key === 'function' ?
                 key(val) : val[key]) : undefined), lesson);
-          else lesson_sorted[field] = lesson[API_key];
+          else lessonSorted[field] = lesson[apiKey];
         }
-        group.push(lesson_sorted);
+        group.push(lessonSorted);
       }
       base[ID] = group;
     } else delete checkObj[ID];
@@ -47,9 +47,9 @@ function generateGroupLessonsURl(groupID) {
 
 async function generateLessonBaseIDAsync(minID, maxID, checkObj) {
   const interestingFields = {
-    week: 'lesson_week', day_number: 'day_number', lesson_name: 'lesson_name',
-    lesson_number: 'lesson_number', lesson_type: 'lesson_type',
-    lesson_room: 'lesson_room', room_id: ['rooms', '0', 'room_id'],
+    week: 'lesson_week', dayNumber: 'day_number', lessonName: 'lesson_name',
+    lessonNumber: 'lesson_number', lessonType: 'lesson_type',
+    lessonRoom: 'lesson_room', roomId: ['rooms', '0', 'room_id'],
     teachers: ['teachers', arr => arr.map(item => item.teacher_name).join(', ')],
   };  //list of field's names in our base(key) and analog in API(value)
   return await generateBase(minID, maxID, generateGroupLessonsURl,
@@ -68,9 +68,9 @@ async function generateGroupBaseIDAsync(minID, maxID) {
     const groupUrl = generateGroupURl(String(groupID));
     const group = (await sendRequestAsync(groupUrl)).data;
     if (group) {
-      const group_name = group.group_full_name;
-      if (group_name)
-        groups[groupID] = group_name;
+      const groupName = group.group_full_name;
+      if (groupName)
+        groups[groupID] = groupName;
     }
   }
   return groups;
@@ -91,16 +91,16 @@ function sortByWeek(lessons) {
 function sortByDay(lessons) {
   const byDay = [];
   for (const lesson of lessons) {
-    const day_number = lesson.day_number;
-    if (byDay[day_number])
-      byDay[day_number].push(lesson);
-    else byDay[day_number] = [lesson];
+    const dayNumber = lesson.dayNumber;
+    if (byDay[dayNumber])
+      byDay[dayNumber].push(lesson);
+    else byDay[dayNumber] = [lesson];
   }
   return byDay;
 }
 
 const sortByLessonNumb = lessons =>
-  lessons.sort((a, b) => a.lesson_number - b.lesson_number);
+  lessons.sort((a, b) => a.lessonNumber - b.lessonNumber);
 
 const sortSchedule = lessons =>
   sortByWeek(lessons)
@@ -121,9 +121,9 @@ function generateTeacherLessonsURl(teacherID) {
 
 async function generateTeacherLessonBaseIDAsync(minID, maxID, checkObj) {
   const interestingFields = {
-    week: 'lesson_week', day_number: 'day_number', lesson_name: 'lesson_name',
-    lesson_number: 'lesson_number', lesson_type: 'lesson_type',
-    lesson_room: 'lesson_room', room_id: ['rooms', '0', 'room_id'],
+    week: 'lesson_week', dayNumber: 'day_number', lessonName: 'lesson_name',
+    lessonNumber: 'lesson_number', lessonType: 'lesson_type',
+    lessonRoom: 'lesson_room', roomId: ['rooms', '0', 'room_id'],
     groups: ['groups', arr => arr.map(item => item.group_full_name).join(', ')]
   };  //list of field's names in our base(key) and analog in API(value)
   return generateBase(minID, maxID, generateTeacherLessonsURl,
@@ -132,8 +132,8 @@ async function generateTeacherLessonBaseIDAsync(minID, maxID, checkObj) {
 
 //teachersBase
 
-function parseTeacherName(teacher_name) {
-  const nameArr = teacher_name.split(' ');
+function parseTeacherName(teacherName) {
+  const nameArr = teacherName.split(' ');
   const len = nameArr.length;
   const start = Math.max(len - 3, 0), end = len;
   const parsedName = nameArr.slice(start, end);
@@ -150,9 +150,9 @@ async function generateTeachersBaseIDAsync(minID, maxID) {
     const teacherURL = generateTeacherURl(String(teacherID));
     const teacher = (await sendRequestAsync(teacherURL)).data;
     if (teacher) {
-      const teacher_name = teacher.teacher_name;
-      if (teacher_name)
-        teachers[teacherID] = parseTeacherName(teacher_name);
+      const teacherName = teacher.teacher_name;
+      if (teacherName)
+        teachers[teacherID] = parseTeacherName(teacherName);
     }
   }
   return teachers;
@@ -164,7 +164,7 @@ function parseRoom(room) {
   const roomArr = room.split('-');
   const block = parseInt(roomArr[roomArr.length - 1], 10);
   const audience = roomArr.slice(0, roomArr.length - 1).join('-');
-  return { block, audience, full_name: room };
+  return { block, audience, fullName: room };
 }
 
 function createArrOfBusyRooms(lessonsForAllGroups) {
@@ -172,8 +172,8 @@ function createArrOfBusyRooms(lessonsForAllGroups) {
   for (const groupID in lessonsForAllGroups) {
     const groupLessons = lessonsForAllGroups[groupID];
     for (const lesson of groupLessons) {
-      const week = lesson.week, day_number = lesson.day_number,
-        lesson_number = lesson.lesson_number,
+      const week = lesson.week, dayNumber = lesson.dayNumber,
+        lessonNumber = lesson.lessonNumber,
         rooms = lesson.lesson_room.split(',');
       rooms.map(room => {
         const parsedRoom = parseRoom(room);
@@ -181,13 +181,13 @@ function createArrOfBusyRooms(lessonsForAllGroups) {
         if (block && parsedRoom.full_name && block <= amountOfBlocks) {
           if (!busyRooms[block]) busyRooms[block] = [];
           if (!busyRooms[block][week]) busyRooms[block][week] = [];
-          if (!busyRooms[block][week][day_number])
-            busyRooms[block][week][day_number] = [];
-          if (!busyRooms[block][week][day_number][lesson_number])
-            busyRooms[block][week][day_number][lesson_number] =
-              [parsedRoom.full_name];
-          else busyRooms[block][week][day_number][lesson_number]
-            .push(parsedRoom.full_name);
+          if (!busyRooms[block][week][dayNumber])
+            busyRooms[block][week][dayNumber] = [];
+          if (!busyRooms[block][week][dayNumber][lessonNumber])
+            busyRooms[block][week][dayNumber][lessonNumber] =
+              [parsedRoom.fullName];
+          else busyRooms[block][week][dayNumber][lessonNumber]
+            .push(parsedRoom.fullName);
         }
       });
     }

@@ -75,11 +75,11 @@ function stringScheduleForDay(lessons) {
     let index = 0;
     while (!lessons[index])
       index++;
-    const str = [`*${days[lessons[index].day_number]}*`];
+    const str = [`*${days[lessons[index].dayNumber]}*`];
     for (const lesson of lessons) {
       if (lesson)
-        str.push(`${lesson.lesson_number}. ${lesson.lesson_name} ` +
-          `${lesson.lesson_type} ${lesson.lesson_room}`);
+        str.push(`${lesson.lessonNumber}. ${lesson.lessonName} ` +
+          `${lesson.lessonType} ${lesson.lessonRoom}`);
     }
     return str.join('\n');
   }
@@ -125,7 +125,7 @@ function findCongruencesGroup(str) {
 
 function findLessonByNumb(lessons, numb) {
   for (const lesson of lessons) {
-    if (parseInt(lesson.lesson_number, 10) === numb)
+    if (parseInt(lesson.lessonNumber, 10) === numb)
       return lesson;
   }
 }

@@ -33,6 +33,5 @@ module.exports = {
   openConnection,
   readFromMongo,
   writeToMongo,
-  closeConnection,
   overwrite,
 };
