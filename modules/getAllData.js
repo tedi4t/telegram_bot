@@ -7,7 +7,8 @@ const MONGO = require('./mongo');
 
 const minID = 5000, maxID = 8000;
 const teacherMinID = 0, teacherMaxID = 6000;
-const amountOfBlocks = 37;
+// above you can see start and end ID for requests
+const { amountOfBlocks } = require('../modules/constantas.js');
 
 async function sendRequestAsync(url) {
   const response = await fetch(url);
@@ -135,6 +136,7 @@ async function generateTeacherLessonBaseIDAsync(minID, maxID, checkObj) {
 function parseTeacherName(teacherName) {
   const nameArr = teacherName.split(' ');
   const len = nameArr.length;
+  // len - 3 because it's usually written 'something surname name paternal name'
   const start = Math.max(len - 3, 0), end = len;
   const parsedName = nameArr.slice(start, end);
   return parsedName.join(' ');

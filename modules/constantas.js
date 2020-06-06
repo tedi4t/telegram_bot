@@ -45,7 +45,9 @@ const milliSecondsWeek = 604800000;
 const mongoURL = 'mongodb+srv://tedi4t:qazwsxedc@cluster0-9gang.mongodb.net/' +
   'DATABASE?retryWrites=true&w=majority';
 
-const timezoneOffset = 3 * 60 * 60 * 1000;
+const timezoneOffset = 3 * 60 * 60 * 1000; //difference between UTC and UTC + 3
+
+const amountOfBlocks = 37;
 
 module.exports = {
   letterChanger,
@@ -54,5 +56,6 @@ module.exports = {
   milliSecondsWeek,
   mongoURL,
   timezoneOffset,
+  amountOfBlocks
 };
 

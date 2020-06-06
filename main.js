@@ -98,7 +98,7 @@ bot.command(['/tomorrow', '/tomorrow@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const groupID = chatGroupID[`${chatID}`];
   const day = new Date().getDay();
-  if (day === 7)
+  if (day === 7) //for last day of the week another request
     FUNCTIONS.replyOneDayStudent(ctx, week % 2 + 1, 1, groupID);
   else FUNCTIONS.replyOneDayStudent(ctx, week, day + 1, groupID);
 });

@@ -24,6 +24,12 @@ function findSecondsDate() {
   const hours = date.getHours();
   const minutes = date.getMinutes();
   const seconds = date.getSeconds();
+  /*
+  below you can see numbers that are in each period:
+  day: 86400,
+  hour: 3600,
+  minutes: 60
+  */
   return (day * 86400 + hours * 3600 + minutes * 60 + seconds) * 1000;
 }
 
@@ -87,6 +93,7 @@ function stringScheduleForDay(lessons) {
 
 function findLessonNumb(date) {
   const time = date.getHours() * 60 + date.getMinutes();
+  //60 for minutes in hour
   for (const lessonNumb in scheduleLessons) {
     const lesson = scheduleLessons[lessonNumb];
     if (lesson.condition(time))
@@ -150,7 +157,8 @@ function replyWeekStudent(ctx, week, groupID) {
       ctx.reply('There aren\'t any lessons by this ID');
     else {
       const weekSchedule = [];
-      for (let day = 1; day <= 7; day++) {
+      const dayInWeek = 7;
+      for (let day = 1; day <= dayInWeek; day++) {
         const schedule = studentSchedule[groupID][week][day];
         const daySchedule = stringScheduleForDay(schedule);
         if (daySchedule)
@@ -184,7 +192,8 @@ function replyWeekTeacher(ctx, week, teacherID) {
     if (!teacherSchedule[teacherID])
       ctx.reply('There aren\'t any lessons by this ID');
     else {
-      for (let day = 1; day <= 7; day++) {
+      const dayInWeek = 7;
+      for (let day = 1; day <= dayInWeek; day++) {
         const schedule = teacherSchedule[teacherID][week][day];
         const daySchedule = stringScheduleForDay(schedule);
         if (daySchedule)
