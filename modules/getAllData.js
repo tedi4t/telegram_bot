@@ -5,8 +5,10 @@ const fetch = require('node-fetch');
 const MODELS = require('./models');
 const MONGO = require('./mongo');
 
+const Obj = require('./obj.js');
+
 const minID = 5000, maxID = 8000;
-const teacherMinID = 0, teacherMaxID = 6000;
+const teacherMinID = 0, teacherMaxID = 5000;
 // above you can see start and end ID for requests
 const { amountOfBlocks } = require('../modules/constantas.js');
 
@@ -82,7 +84,7 @@ async function generateGroupBaseIDAsync(minID, maxID) {
 //students Schedule
 
 function sortByWeek(lessons) {
-  const sorted = [];
+  const sorted = {};
   for (const lesson of lessons) {
     if (sorted[parseInt(lesson.week, 10)])
       sorted[parseInt(lesson.week, 10)].push(lesson);
@@ -92,23 +94,27 @@ function sortByWeek(lessons) {
 }
 
 function sortByDay(lessons) {
-  const byDay = [];
+  const byDay = {};
   for (const lesson of lessons) {
-    const dayNumber = lesson.dayNumber;
-    if (byDay[dayNumber])
-      byDay[dayNumber].push(lesson);
-    else byDay[dayNumber] = [lesson];
+    const dayNumber = lesson.dayNumber, lessonNumber = lesson.lessonNumber;
+    const dayLessons = byDay[dayNumber];
+    if (dayLessons) {
+      dayLessons[lessonNumber] = lesson;
+    } else {
+      byDay[dayNumber] = new Object();
+      byDay[dayNumber][lessonNumber] = lesson;
+    }
   }
   return byDay;
 }
 
-const sortByLessonNumb = lessons =>
-  lessons.sort((a, b) => a.lessonNumber - b.lessonNumber);
-
-const sortSchedule = lessons =>
-  sortByWeek(lessons)
-    .map(week => sortByDay(week)
-      .map(day => sortByLessonNumb(day)));
+function sortSchedule(lessons) {
+  const sortedWeek = sortByWeek(lessons);
+  const weekKeys = Object.keys(sortedWeek);
+  const sorted = weekKeys
+    .reduce((hash, week) => (hash[week] = sortByDay(sortedWeek[week]), hash), {});
+  return sorted;
+}
 
 function generateSchedule(lessons) {
   const schedule = {};
@@ -171,67 +177,26 @@ function parseRoom(room) {
   return { block, audience, fullName: room };
 }
 
-function assignArrForWeekRooms() {
-  const weeks = 2;
-  const days = 7;
-  const lessonsPerDay = 4;
-  const Arr = Array.from({ length: weeks },
-    (() => Array.from({ length: days },
-      (() => Array.from({ length: lessonsPerDay }, (() => []))))));
-  return Arr;
-}
-
-function createArrOfBusyRooms(lessonsForAllGroups) {
-  const busyRooms = {}; //block -> week -> day -> lesson number
+function makeRoomsSchedule(lessonsForAllGroups) {
+  const busyRooms = new Object(); //block -> week -> day -> lesson number
   for (const groupID in lessonsForAllGroups) {
     const groupLessons = lessonsForAllGroups[groupID];
     for (const lesson of groupLessons) {
       const week = lesson.week, dayNumber = lesson.dayNumber,
         lessonNumber = lesson.lessonNumber,
-        rooms = lesson.lesson_room.split(',');
+        rooms = lesson.lessonRoom.split(',');
       rooms.forEach(room => {
         const parsedRoom = parseRoom(room);
         const block = parsedRoom.block;
-        if (block && parsedRoom.fullName && block <= amountOfBlocks) {
-          busyRooms[block] = busyRooms[block] || assignArrForWeekRooms();
-          let busyRoomsLesson = busyRooms[block][week][dayNumber][lessonNumber];
-          if (!busyRoomsLesson)
-            busyRoomsLesson = [parsedRoom.fullName];
-          else busyRoomsLesson.push(parsedRoom.fullName);
+        if (block && block <= amountOfBlocks) {
+          const busyRoomsLesson = new Obj(busyRooms)
+            .addManyObj(block, week, dayNumber).addArr(lessonNumber).value();
+          busyRoomsLesson.push(parsedRoom.fullName);
         }
       });
     }
   }
   return busyRooms;
-}
-
-function sortArrOfBusyRooms(busyRooms) {
-  const sortedArr = {};
-  for (const block in busyRooms) {
-    sortedArr[block] = [];
-    const sortedArrBlock = sortedArr[block];
-    const blockRooms = busyRooms[block];
-    for (const week in blockRooms) {
-      sortedArrBlock[week] = [];
-      const sortedArrWeek = sortedArrBlock[week];
-      const weekRooms = blockRooms[week];
-      for (const day in weekRooms) {
-        sortedArrWeek[day] = [];
-        const sortedArrDay = sortedArrWeek[day];
-        const dayRooms = weekRooms[day];
-        for (const lesson in dayRooms) {
-          const lessonRooms = dayRooms[lesson]
-            .sort((a, b) => a.localeCompare(b));
-          sortedArrDay[lesson] = lessonRooms;
-        }
-      }
-    }
-  }
-  return sortedArr;
-}
-
-function makeRoomsSchedule(lessonsGroups) {
-  return sortArrOfBusyRooms(createArrOfBusyRooms(lessonsGroups));
 }
 
 function getAllData() {
@@ -245,11 +210,11 @@ function getAllData() {
       }, MODELS.generalModel);
       MONGO.writeToMongo({
         baseName: 'roomsSchedule',
-        content: makeRoomsSchedule(lessonsBase)
+        content: makeRoomsSchedule(lessonsBase),
       }, MODELS.generalModel);
       MONGO.writeToMongo({
-        baseName: 'groupsBase', content:
-        groupsBase
+        baseName: 'groupsBase',
+        content: groupsBase
       }, MODELS.generalModel);
     });
   });

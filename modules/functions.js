@@ -3,6 +3,7 @@
 const { letterChanger, days, scheduleLessons,
   timezoneOffset } = require('./constantas.js');
 const fetch = require('node-fetch');
+const Obj = require('./obj.js');
 
 const MODELS = require('../modules/models.js');
 const MONGO = require('../modules/mongo.js');
@@ -11,9 +12,9 @@ let groupsBase, studentSchedule, teachersBase, teacherSchedule, roomsSchedule;
 
 MONGO.openConnection().then(async () => {
   groupsBase = await readMongo('groupsBase');
-  studentSchedule = await readMongo('studentSchedule');
+  studentSchedule = new Obj(await readMongo('studentSchedule'));
   teachersBase = await readMongo('teachersBase');
-  teacherSchedule = await readMongo('teachersSchedule');
+  teacherSchedule = new Obj(await readMongo('teachersSchedule'));
   roomsSchedule = await readMongo('roomsSchedule');
 });
 
@@ -42,7 +43,7 @@ async function sendRequestAsync(url) {
 async function readMongo(baseName) {
   const data = (await MONGO.readFromMongo({ baseName }, MODELS.generalModel));
   if (data)
-    return data.content;
+    return data.content || new Object();
   else {
     MONGO.writeToMongo({ baseName, content: {} }, MODELS.generalModel);
     return new Object();
@@ -74,14 +75,14 @@ function parseGroupName(str) {
 
 function stringScheduleForDay(lessons) {
   if (lessons) {
-    let index = 0;
-    while (!lessons[index])
-      index++;
-    const str = [`*${days[lessons[index].dayNumber]}*`];
-    for (const lesson of lessons) {
-      if (lesson)
-        str.push(`${lesson.lessonNumber}. ${lesson.lessonName} ` +
-          `${lesson.lessonType} ${lesson.lessonRoom}`);
+    const key = Object.keys(lessons)[0];
+    const lesson = lessons[key];
+    const day = days[lesson.dayNumber];
+    const str = [`*${day}*`];
+    for (const key in lessons) {
+      const lesson = lessons[key];
+      str.push(`${lesson.lessonNumber}. ${lesson.lessonName} ` +
+        `${lesson.lessonType} ${lesson.lessonRoom}`);
     }
     return str.join('\n');
   }
@@ -100,13 +101,14 @@ function findLessonNumb(date) {
 function convergeTeacherName(enteredArr, nameArr) {
   let converged = true;
   for (const index in enteredArr) {
-    if (parseInt(index, 10) === 0 &&
-      nameArr[index].localeCompare(enteredArr[index]) !== 0) {
-        converged = false;
-    } else if (converged && nameArr[index] && enteredArr[index] &&
-      nameArr[index][0] !== enteredArr[index][0]) {
+    const surname = parseInt(index, 10) === 0;
+    const sameSurnames = nameArr[index].localeCompare(enteredArr[index]) !== 0;
+    const itemExists = nameArr[index] && enteredArr[index];
+    const sameNames = nameArr[index][0] !== enteredArr[index][0];
+    if (surname && sameSurnames)
       converged = false;
-    }
+    else if (converged && itemExists && sameNames)
+      converged = false;
   }
   return converged;
 }
@@ -140,7 +142,7 @@ function findLessonByNumb(lessons, numb) {
 
 function replyOneDayStudent(ctx, week, day, groupID) {
   if (groupID) {
-    const schedule = studentSchedule[groupID][week][day];
+    const schedule = studentSchedule.getMany(groupID, week, day).value();
     const scheduleDay = stringScheduleForDay(schedule);
     if (scheduleDay)
       ctx.reply(scheduleDay, { parse_mode: 'Markdown' });
@@ -153,7 +155,7 @@ function replyWeekStudent(ctx, week, groupID) {
     const weekSchedule = [];
     const dayInWeek = 7;
     for (let day = 1; day <= dayInWeek; day++) {
-      const schedule = studentSchedule[groupID][week][day];
+      const schedule = studentSchedule.getMany(groupID, week, day).value();
       const daySchedule = stringScheduleForDay(schedule);
       if (daySchedule)
         weekSchedule.push(daySchedule);
@@ -167,16 +169,14 @@ function replyWeekStudent(ctx, week, groupID) {
 
 function replyOneDayTeacher(ctx, week, day, teacherID) {
   if (teacherID) {
-    if (!teacherSchedule[teacherID])
-      ctx.reply('There aren\'t any lessons by this ID');
-    else {
-      const schedule = teacherSchedule[teacherID][week][day];
-      const scheduleDay = stringScheduleForDay(schedule);
-      if (scheduleDay)
-        ctx.reply(scheduleDay, { parse_mode: 'Markdown' });
-      else ctx.reply('You don\'t have any lessons');
-    }
-  } else ctx.reply('Your teacher ID was not set!');
+    const schedule = teacherSchedule.getMany(teacherID, week, day).value();
+    const scheduleDay = stringScheduleForDay(schedule);
+    if (scheduleDay)
+      ctx.reply(scheduleDay, { parse_mode: 'Markdown' });
+    else ctx.reply('You don\'t have any lessons');
+  } else {
+    ctx.reply('Your teacher ID was not set!');
+  }
 }
 
 function replyWeekTeacher(ctx, week, teacherID) {
@@ -184,7 +184,7 @@ function replyWeekTeacher(ctx, week, teacherID) {
     const weekSchedule = [];
     const dayInWeek = 7;
     for (let day = 1; day <= dayInWeek; day++) {
-      const schedule = teacherSchedule[teacherID][week][day];
+      const schedule = teacherSchedule.getMany(teacherID, week, day).value();
       const daySchedule = stringScheduleForDay(schedule);
       if (daySchedule)
         weekSchedule.push(daySchedule);
@@ -198,7 +198,7 @@ function findTeacherName(ctx, week, groupID) {
   const date = new Date();
   date.setTime(date.getTime() + timezoneOffset);
   const day = date.getDay();
-  const schedule = studentSchedule[groupID][week][day];
+  const schedule = studentSchedule.getMany(groupID, week, day).value();
   const lessonNumb = findLessonNumb(date);
   const lesson = findLessonByNumb(schedule, lessonNumb);
   const teacher = lesson.teachers;

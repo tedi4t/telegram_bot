@@ -9,7 +9,7 @@ const generalSchema = mongoose.Schema({
     unique: true
   },
   content: {
-    type: Object,
+    // required: false,
   },
 });
 
