@@ -18,7 +18,7 @@ MONGO.openConnection().then(async () => {
   roomsSchedule = await readMongo('roomsSchedule');
 });
 
-function findSecondsDate() {
+function findMiliSecondsDate() {
   const date = new Date();
   date.setTime(date.getTime() + timezoneOffset);
   const day = date.getDay() - 1;
@@ -31,7 +31,8 @@ function findSecondsDate() {
   hour: 3600,
   minutes: 60
   */
-  return (day * 86400 + hours * 3600 + minutes * 60 + seconds) * 1000;
+  const secondsPassed = day * 86400 + hours * 3600 + minutes * 60 + seconds;
+  return secondsPassed * 1000;
 }
 
 async function sendRequestAsync(url) {
@@ -43,10 +44,10 @@ async function sendRequestAsync(url) {
 async function readMongo(baseName) {
   const data = (await MONGO.readFromMongo({ baseName }, MODELS.generalModel));
   if (data)
-    return data.content || new Object();
+    return data.content || {};
   else {
     MONGO.writeToMongo({ baseName, content: {} }, MODELS.generalModel);
-    return new Object();
+    return {};
   }
 }
 
@@ -59,16 +60,15 @@ function parseCommandText(str) {
 function parseGroupName(str) {
   const arr = str.split('');
   const parsedNameArr = [];
+  //adding - for third position in group name
   parsedNameArr[2] = '-';
   for (const index in arr) {
     const indInt = parseInt(index, 10);
     const value = arr[index];
     const changer = letterChanger[value];
-    if (parsedNameArr[indInt]) {
-      parsedNameArr[indInt + 1] = changer || value;
-    } else {
-      parsedNameArr[indInt] = changer || value;
-    }
+    const newValue = changer || value;
+    if (parsedNameArr[indInt]) parsedNameArr[indInt + 1] = newValue;
+    else parsedNameArr[indInt] = newValue;
   }
   return parsedNameArr.join('');
 }
@@ -115,20 +115,20 @@ function convergeTeacherName(enteredArr, nameArr) {
 
 function findCongruencesTeacher(enteredArr) {
   const congruences = [];
-  for (const id in teachersBase) {
-    const nameArr = teachersBase[id].toLowerCase().split(' ');
+  for (const ID in teachersBase) {
+    const nameArr = teachersBase[ID].toLowerCase().split(' ');
     const converged = convergeTeacherName(enteredArr, nameArr);
-    if (converged) congruences.push({ id, name: nameArr.join(' ') });
+    if (converged) congruences.push({ ID, name: nameArr.join(' ') });
   }
   return congruences;
 }
 
 function findCongruencesGroup(str) {
   const congruences = [];
-  for (const id in groupsBase) {
-    const nameArr = groupsBase[id].split(' ');
+  for (const ID in groupsBase) {
+    const nameArr = groupsBase[ID].split(' ');
     if (str.localeCompare(nameArr[0]) === 0)
-      congruences.push({ id, name: nameArr.join(' ') });
+      congruences.push({ ID, name: nameArr.join(' ') });
   }
   return congruences;
 }
@@ -153,8 +153,8 @@ function replyOneDayStudent(ctx, week, day, groupID) {
 function replyWeekStudent(ctx, week, groupID) {
   if (groupID) {
     const weekSchedule = [];
-    const dayInWeek = 7;
-    for (let day = 1; day <= dayInWeek; day++) {
+    const daysInWeek = 7;
+    for (let day = 1; day <= daysInWeek; day++) {
       const schedule = studentSchedule.getMany(groupID, week, day).value();
       const daySchedule = stringScheduleForDay(schedule);
       if (daySchedule)
@@ -217,7 +217,7 @@ function findBusyRooms(block, week) {
 module.exports = {
   readMongo,
   sendRequestAsync,
-  findSecondsDate,
+  findMiliSecondsDate,
   parseGroupName,
   parseCommandText,
   findCongruencesGroup,

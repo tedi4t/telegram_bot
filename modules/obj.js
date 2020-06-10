@@ -7,7 +7,7 @@ class Obj {
 
   addObj(key) {
     if (!this.obj[key])
-      this.obj[key] = new Object();
+      this.obj[key] = {};
     return new Obj(this.obj[key]);
   }
 
@@ -17,7 +17,7 @@ class Obj {
 
   addArr(key) {
     if (!this.obj[key])
-      this.obj[key] = new Array();
+      this.obj[key] = [];
     return new Obj(this.obj[key]);
   }
 

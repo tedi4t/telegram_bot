@@ -7,7 +7,7 @@ const MODELS = require('./modules/models.js');
 const MONGO = require('./modules/mongo.js');
 
 const { TOKEN, URL } = require('./modules/config');
-const { milliSecondsWeek } = require('./modules/constantas');
+const { milliSecondsWeek, dayOffset } = require('./modules/constantas');
 
 const bot = new Telegraf(TOKEN);
 
@@ -23,10 +23,12 @@ MONGO.openConnection().then(async () => {
 
 let week;
 getWeek(false);
-setTimeout(getWeek, milliSecondsWeek - FUNCTIONS.findSecondsDate());
+const secondsPassed = FUNCTIONS.findMiliSecondsDate();
+setTimeout(getWeek, milliSecondsWeek - secondsPassed);
 
 async function getWeek(setTimer = true) {
-  week = (await FUNCTIONS.sendRequestAsync('https://api.rozklad.org.ua/v2/weeks')).data;
+  const url = 'https://api.rozklad.org.ua/v2/weeks';
+  week = (await FUNCTIONS.sendRequestAsync(url)).data;
   if (setTimer) {
     setTimeout(getWeek, milliSecondsWeek);
   }
@@ -67,18 +69,19 @@ bot.command(['/group', '/group@aefioiefjsrhfbsbjbot'], ctx => {
   try {
     const congruences = FUNCTIONS.findCongruencesGroup(enteredGroup);
     if (congruences.length === 1) {
-      chatGroupID[chatID] = congruences[0].id;
-      const newObjMongo = { baseName: 'chatGroupID', content: chatGroupID };
-      MONGO.overwrite('chatGroupID', newObjMongo, MODELS.generalModel);
+      chatGroupID[chatID] = congruences[0].ID;
+      const baseName = 'chatGroupID';
+      const newObjMongo = { baseName, content: chatGroupID };
+      MONGO.overwrite(baseName, newObjMongo, MODELS.generalModel);
       ctx.reply('Your group was set');
     } else {
       const keyboard = [];
       for (const group of congruences)
         keyboard.push([{
           text: group.name,
-          callback_data: `group ${group.id}`
+          callback_data: `group ${group.ID}`
         }]);
-      sendInlineKeyboardMessage(ctx.message.chat.id, keyboard);
+      sendInlineKeyboardMessage(chatID, keyboard);
     }
   } catch (e) {
     ctx.reply('Can\'t find group\'s name');
@@ -87,14 +90,14 @@ bot.command(['/group', '/group@aefioiefjsrhfbsbjbot'], ctx => {
 
 bot.command(['/today', '/today@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
-  const groupID = chatGroupID[`${chatID}`];
+  const groupID = chatGroupID[chatID];
   const day = new Date().getDay();
   FUNCTIONS.replyOneDayStudent(ctx, week, day, groupID);
 });
 
 bot.command(['/tomorrow', '/tomorrow@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
-  const groupID = chatGroupID[`${chatID}`];
+  const groupID = chatGroupID[chatID];
   const day = new Date().getDay();
   if (day === 7) //for last day of the week another request
     FUNCTIONS.replyOneDayStudent(ctx, week % 2 + 1, 1, groupID);
@@ -103,7 +106,7 @@ bot.command(['/tomorrow', '/tomorrow@aefioiefjsrhfbsbjbot'], ctx => {
 
 bot.command(['/week', '/week@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
-  const groupID = chatGroupID[`${chatID}`];
+  const groupID = chatGroupID[chatID];
   FUNCTIONS.replyWeekStudent(ctx, week, groupID);
 });
 
@@ -119,7 +122,7 @@ bot.command(['/teacher', '/teacher@aefioiefjsrhfbsbjbot'], ctx => {
   try {
     const congruences = FUNCTIONS.findCongruencesTeacher(enteredNameArr);
     if (congruences.length === 1) {
-      chatTeacherID[chatID] = congruences[0].id;
+      chatTeacherID[chatID] = congruences[0].ID;
       const newObjMongo = {
         baseName: 'chatTeacherID',
         content: chatTeacherID
@@ -131,7 +134,7 @@ bot.command(['/teacher', '/teacher@aefioiefjsrhfbsbjbot'], ctx => {
       for (const teacher of congruences)
         keyboard.push([{
           text: teacher.name,
-          callback_data: `teacher ${teacher.id}`
+          callback_data: `teacher ${teacher.ID}`
         }]);
       sendInlineKeyboardMessage(ctx.message.chat.id, keyboard);
     }
@@ -171,7 +174,8 @@ bot.command(['/teachernextweek',
 });
 
 bot.command(['/busyrooms', '/busyrooms@aefioiefjsrhfbsbjbot'], ctx => {
-  const block = FUNCTIONS.parseCommandText(ctx.update.message.text)[0];
+  const text = ctx.update.message.text;
+  const block = FUNCTIONS.parseCommandText(text)[0];
   try {
     ctx.reply(FUNCTIONS.findBusyRooms(block, week).join(', '));
   } catch (e) {
@@ -181,7 +185,7 @@ bot.command(['/busyrooms', '/busyrooms@aefioiefjsrhfbsbjbot'], ctx => {
 
 bot.command(['/name', '/name@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
-  const groupID = chatGroupID[`${chatID}`];
+  const groupID = chatGroupID[chatID];
   try {
     ctx.reply(FUNCTIONS.findTeacherName(ctx, week, groupID));
   } catch (e) {
@@ -196,18 +200,22 @@ bot.catch(err => {
 bot.on('callback_query', ctx => {
   const chatID = ctx.update.callback_query.message.chat.id;
   const text = ctx.update.callback_query.data;
-  const command = text.split(' ')[0];
+  const splitQuery = text.split(' ');
+  const command = splitQuery[0];
+  const ID = splitQuery[1];
   ctx.editMessageReplyMarkup();
   if (command === 'teacher') {
-    chatTeacherID[chatID] = text.split(' ')[1];
-    const newObjMongo = { baseName: 'chatTeacherID', content: chatTeacherID };
-    MONGO.overwrite('chatTeacherID', newObjMongo, MODELS.generalModel);
+    chatTeacherID[chatID] = ID;
+    const baseName = 'chatTeacherID';
+    const newObjMongo = { baseName: baseName, content: chatTeacherID };
+    MONGO.overwrite(baseName, newObjMongo, MODELS.generalModel);
     ctx.reply('Your name was set');
   }
   if (command === 'group') {
-    chatGroupID[chatID] = text.split(' ')[1];
-    const newObjMongo = { baseName: 'chatGroupID', content: chatGroupID };
-    MONGO.overwrite('chatGroupID', newObjMongo, MODELS.generalModel);
+    chatGroupID[chatID] = ID;
+    const baseName = 'chatGroupID';
+    const newObjMongo = { baseName: baseName, content: chatGroupID };
+    MONGO.overwrite(baseName, newObjMongo, MODELS.generalModel);
     ctx.reply('Your group was set');
   }
 });

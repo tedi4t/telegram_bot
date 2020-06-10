@@ -20,10 +20,11 @@ async function sendRequestAsync(url) {
 
 //lessonsBase
 
-async function generateBase(minID, maxID, generateURL, fields, checkObj) {
+async function generateBase(minID, maxID, funcGenerateURL, fields, checkObj) {
   const base = {};
   for (let ID = minID; ID <= maxID; ID++) {
-    const lessons = (await sendRequestAsync(generateURL(String(ID)))).data;
+    const url = funcGenerateURL(ID);
+    const lessons = (await sendRequestAsync(url)).data;
     const group = [];
     if (lessons) {
       for (const lesson of lessons) {
@@ -69,13 +70,12 @@ function generateGroupURl(groupID) {
 
 async function generateGroupBaseIDAsync(minID, maxID) {
   const groups = {};
-  for (let groupID = minID; groupID <= maxID; groupID++) {
-    const groupUrl = generateGroupURl(String(groupID));
+  for (let ID = minID; ID <= maxID; ID++) {
+    const groupUrl = generateGroupURl(String(ID));
     const group = (await sendRequestAsync(groupUrl)).data;
     if (group) {
       const groupName = group.group_full_name;
-      if (groupName)
-        groups[groupID] = groupName;
+      groups[ID] = groupName;
     }
   }
   return groups;
@@ -86,8 +86,9 @@ async function generateGroupBaseIDAsync(minID, maxID) {
 function sortByWeek(lessons) {
   const sorted = {};
   for (const lesson of lessons) {
-    if (sorted[parseInt(lesson.week, 10)])
-      sorted[parseInt(lesson.week, 10)].push(lesson);
+    const item = sorted[parseInt(lesson.week, 10)];
+    if (item)
+      item.push(lesson);
     else sorted[parseInt(lesson.week, 10)] = [lesson];
   }
   return sorted;
@@ -156,13 +157,13 @@ function generateTeacherURl(teacherID) {
 
 async function generateTeachersBaseIDAsync(minID, maxID) {
   const teachers = {};
-  for (let teacherID = minID; teacherID <= maxID; teacherID++) {
-    const teacherURL = generateTeacherURl(String(teacherID));
+  for (let ID = minID; ID <= maxID; ID++) {
+    const teacherURL = generateTeacherURl(ID);
     const teacher = (await sendRequestAsync(teacherURL)).data;
     if (teacher) {
       const teacherName = teacher.teacher_name;
       if (teacherName)
-        teachers[teacherID] = parseTeacherName(teacherName);
+        teachers[ID] = parseTeacherName(teacherName);
     }
   }
   return teachers;
@@ -172,13 +173,14 @@ async function generateTeachersBaseIDAsync(minID, maxID) {
 
 function parseRoom(room) {
   const roomArr = room.split('-');
-  const block = parseInt(roomArr[roomArr.length - 1], 10);
-  const audience = roomArr.slice(0, roomArr.length - 1).join('-');
+  const lastInd = roomArr.length - 1;
+  const block = parseInt(roomArr[lastInd], 10);
+  const audience = roomArr.slice(0, lastInd).join('-');
   return { block, audience, fullName: room };
 }
 
 function makeRoomsSchedule(lessonsForAllGroups) {
-  const busyRooms = new Object(); //block -> week -> day -> lesson number
+  const busyRooms = {}; //block -> week -> day -> lesson number
   for (const groupID in lessonsForAllGroups) {
     const groupLessons = lessonsForAllGroups[groupID];
     for (const lesson of groupLessons) {

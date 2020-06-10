@@ -29,8 +29,15 @@ const letterChanger = {
   'ya': 'я',
 };
 
-const days = ['', 'Понеділок', 'Вівторок', 'Середа',
-  'Четвер', 'П\'ятниця', 'Субота', 'Неділя'];
+const days = {
+  1: 'Понеділок',
+  2: 'Вівторок',
+  3: 'Середа',
+  4: 'Четвер',
+  5: 'П\'ятниця',
+  6: 'Субота',
+  7: 'Неділя',
+};
 
 const scheduleLessons = [
   { condition: time => (510 <= time && time <= 605) },
@@ -46,6 +53,7 @@ const mongoURL = 'mongodb+srv://tedi4t:qazwsxedc@cluster0-9gang.mongodb.net/' +
   'DATABASE?retryWrites=true&w=majority';
 
 const timezoneOffset = 3 * 60 * 60 * 1000; //difference between UTC and UTC + 3
+const dayOffset = 24 *  60 * 60 * 1000; //difference between two days
 
 const amountOfBlocks = 37;
 
@@ -56,6 +64,7 @@ module.exports = {
   milliSecondsWeek,
   mongoURL,
   timezoneOffset,
-  amountOfBlocks
+  dayOffset,
+  amountOfBlocks,
 };
 

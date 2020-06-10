@@ -4,9 +4,9 @@ const mongoose = require('mongoose');
 
 const { mongoURL } = require('./constantas.js');
 
-async function openConnection() {
-  mongoose.connect(mongoURL, { useNewUrlParser: true });
-  mongoose.connection;
+async function openConnection(URL = mongoURL) {
+  mongoose.connect(URL, { useNewUrlParser: true });
+  // mongoose.connection;
 }
 
 async function readFromMongo(obj, model) {
