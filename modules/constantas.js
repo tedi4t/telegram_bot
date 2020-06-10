@@ -29,15 +29,15 @@ const letterChanger = {
   'ya': 'я',
 };
 
-const days = {
-  1: 'Понеділок',
-  2: 'Вівторок',
-  3: 'Середа',
-  4: 'Четвер',
-  5: 'П\'ятниця',
-  6: 'Субота',
-  7: 'Неділя',
-};
+const days = [
+  'Понеділок',
+  'Вівторок',
+  'Середа',
+  'Четвер',
+  'П\'ятниця',
+  'Субота',
+  'Неділя',
+];
 
 const scheduleLessons = [
   { condition: time => (510 <= time && time <= 605) },
@@ -73,7 +73,6 @@ module.exports = {
   milliSecondsWeek,
   mongoURL,
   timezoneOffset,
-  dayOffset,
   amountOfBlocks,
   studentBordersID,
   teacherBordersID,

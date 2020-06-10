@@ -77,7 +77,8 @@ function stringScheduleForDay(lessons) {
   if (lessons) {
     const key = Object.keys(lessons)[0];
     const lesson = lessons[key];
-    const day = days[lesson.dayNumber];
+    const dayNumbInArr = lesson.dayNumber - 1;
+    const day = days[dayNumbInArr];
     const str = [`*${day}*`];
     for (const key in lessons) {
       const lesson = lessons[key];

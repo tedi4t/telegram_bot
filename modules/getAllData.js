@@ -57,15 +57,18 @@ function generateGroupLessonsURl(groupID) {
 }
 
 async function generateLessonBaseIDAsync(borderID, checkObj) {
-  const { minID, maxID } = borderID;
-  const interestingFields = {
+  const fields = {
     week: 'lesson_week', dayNumber: 'day_number', lessonName: 'lesson_name',
     lessonNumber: 'lesson_number', lessonType: 'lesson_type',
     lessonRoom: 'lesson_room', roomId: ['rooms', '0', 'room_id'],
     teachers: ['teachers', arr => arr.map(item => item.teacher_name).join(', ')],
   };  //list of field's names in our base(key) and analog in API(value)
-  return await generateBase(minID, maxID, generateGroupLessonsURl,
-    interestingFields, checkObj);
+  const base = await generateBase(
+    borderID,
+    generateGroupLessonsURl,
+    fields,
+    checkObj);
+  return base;
 }
 
 //groupsBase
@@ -138,15 +141,18 @@ function generateTeacherLessonsURl(teacherID) {
 }
 
 async function generateTeacherLessonBaseIDAsync(borderID, checkObj) {
-  const { minID, maxID } = borderID;
-  const interestingFields = {
+  const fields = {
     week: 'lesson_week', dayNumber: 'day_number', lessonName: 'lesson_name',
     lessonNumber: 'lesson_number', lessonType: 'lesson_type',
     lessonRoom: 'lesson_room', roomId: ['rooms', '0', 'room_id'],
     groups: ['groups', arr => arr.map(item => item.group_full_name).join(', ')]
   };  //list of field's names in our base(key) and analog in API(value)
-  return generateBase(minID, maxID, generateTeacherLessonsURl,
-    interestingFields, checkObj);
+  const base = generateBase(
+    borderID,
+    generateTeacherLessonsURl,
+    fields,
+    checkObj);
+  return base;
 }
 
 //teachersBase

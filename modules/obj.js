@@ -11,6 +11,7 @@ class Obj {
     return new Obj(this.obj[key]);
   }
 
+  //this function if for adding objects one inside another
   addManyObj(...keys) {
     return keys.reduce((acc, key) => acc.addObj(key), this);
   }
@@ -26,6 +27,7 @@ class Obj {
     return new Obj(value);
   }
 
+  //this function if for getting objects one inside another
   getMany(...keys) {
     return keys.reduce((acc, key) => acc.get(key), this);
   }
