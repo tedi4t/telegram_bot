@@ -7,8 +7,8 @@ const MONGO = require('./mongo');
 
 const Obj = require('./obj.js');
 
-const minID = 5000, maxID = 8000;
-const teacherMinID = 0, teacherMaxID = 5000;
+const { studentBordersID, teacherBordersID } = require('constantas.js');
+
 // above you can see start and end ID for requests
 const { amountOfBlocks } = require('../modules/constantas.js');
 
@@ -20,7 +20,16 @@ async function sendRequestAsync(url) {
 
 //lessonsBase
 
-async function generateBase(minID, maxID, funcGenerateURL, fields, checkObj) {
+function projection(obj, apiKey) {
+  if (Array.isArray(apiKey))
+    return apiKey.reduce((val, key) =>
+      (val ? (typeof key === 'function' ?
+        key(val) : val[key]) : undefined), obj);
+  return obj[apiKey];
+}
+
+async function generateBase(borderID, funcGenerateURL, fields, checkObj) {
+  const { minID, maxID } = borderID;
   const base = {};
   for (let ID = minID; ID <= maxID; ID++) {
     const url = funcGenerateURL(ID);
@@ -31,11 +40,7 @@ async function generateBase(minID, maxID, funcGenerateURL, fields, checkObj) {
         const lessonSorted = {};
         for (const field in fields) {
           const apiKey = fields[field]; // field's key in API
-          if (Array.isArray(apiKey))
-            lessonSorted[field] = apiKey.reduce((val, key) =>
-              (val ? (typeof key === 'function' ?
-                key(val) : val[key]) : undefined), lesson);
-          else lessonSorted[field] = lesson[apiKey];
+          lessonSorted[field] = projection(lesson, apiKey);
         }
         group.push(lessonSorted);
       }
@@ -51,7 +56,8 @@ function generateGroupLessonsURl(groupID) {
   return `https://api.rozklad.org.ua/v2/groups/${groupID}/lessons`;
 }
 
-async function generateLessonBaseIDAsync(minID, maxID, checkObj) {
+async function generateLessonBaseIDAsync(borderID, checkObj) {
+  const { minID, maxID } = borderID;
   const interestingFields = {
     week: 'lesson_week', dayNumber: 'day_number', lessonName: 'lesson_name',
     lessonNumber: 'lesson_number', lessonType: 'lesson_type',
@@ -68,10 +74,11 @@ function generateGroupURl(groupID) {
   return `https://api.rozklad.org.ua/v2/groups/${groupID}`;
 }
 
-async function generateGroupBaseIDAsync(minID, maxID) {
+async function generateGroupBaseIDAsync(borderID) {
+  const { minID, maxID } = borderID;
   const groups = {};
   for (let ID = minID; ID <= maxID; ID++) {
-    const groupUrl = generateGroupURl(String(ID));
+    const groupUrl = generateGroupURl(ID);
     const group = (await sendRequestAsync(groupUrl)).data;
     if (group) {
       const groupName = group.group_full_name;
@@ -86,7 +93,8 @@ async function generateGroupBaseIDAsync(minID, maxID) {
 function sortByWeek(lessons) {
   const sorted = {};
   for (const lesson of lessons) {
-    const item = sorted[parseInt(lesson.week, 10)];
+    const key = parseInt(lesson.week, 10);
+    const item = sorted[key];
     if (item)
       item.push(lesson);
     else sorted[parseInt(lesson.week, 10)] = [lesson];
@@ -102,7 +110,7 @@ function sortByDay(lessons) {
     if (dayLessons) {
       dayLessons[lessonNumber] = lesson;
     } else {
-      byDay[dayNumber] = new Object();
+      byDay[dayNumber] = {};
       byDay[dayNumber][lessonNumber] = lesson;
     }
   }
@@ -112,14 +120,14 @@ function sortByDay(lessons) {
 function sortSchedule(lessons) {
   const sortedWeek = sortByWeek(lessons);
   const weekKeys = Object.keys(sortedWeek);
-  const sorted = weekKeys
-    .reduce((hash, week) => (hash[week] = sortByDay(sortedWeek[week]), hash), {});
+  const sorted = weekKeys.reduce((hash, week) =>
+    (hash[week] = sortByDay(sortedWeek[week]), hash), {});
   return sorted;
 }
 
 function generateSchedule(lessons) {
   const schedule = {};
-  Object.keys(lessons).map(ID => schedule[ID] = sortSchedule(lessons[ID]));
+  Object.keys(lessons).forEach(ID => schedule[ID] = sortSchedule(lessons[ID]));
   return schedule;
 }
 
@@ -129,7 +137,8 @@ function generateTeacherLessonsURl(teacherID) {
   return `https://api.rozklad.org.ua/v2/teachers/${teacherID}/lessons`;
 }
 
-async function generateTeacherLessonBaseIDAsync(minID, maxID, checkObj) {
+async function generateTeacherLessonBaseIDAsync(borderID, checkObj) {
+  const { minID, maxID } = borderID;
   const interestingFields = {
     week: 'lesson_week', dayNumber: 'day_number', lessonName: 'lesson_name',
     lessonNumber: 'lesson_number', lessonType: 'lesson_type',
@@ -155,7 +164,8 @@ function generateTeacherURl(teacherID) {
   return `https://api.rozklad.org.ua/v2/teachers/${teacherID}`;
 }
 
-async function generateTeachersBaseIDAsync(minID, maxID) {
+async function generateTeachersBaseIDAsync(borderID) {
+  const { minID, maxID } = borderID;
   const teachers = {};
   for (let ID = minID; ID <= maxID; ID++) {
     const teacherURL = generateTeacherURl(ID);
@@ -201,11 +211,12 @@ function makeRoomsSchedule(lessonsForAllGroups) {
   return busyRooms;
 }
 
-function getAllData() {
-  generateGroupBaseIDAsync(minID, maxID).then(groupsBase => {
+function getAllData(studentBordersID, teacherBordersID) {
+  generateGroupBaseIDAsync(studentBordersID).then(groupsBase => {
     const allIDs = Object.keys(groupsBase);
     const minID = allIDs[0], maxID = allIDs[allIDs.length - 1];
-    generateLessonBaseIDAsync(minID, maxID, groupsBase).then(lessonsBase => {
+    const borderID = { minID, maxID };
+    generateLessonBaseIDAsync(borderID, groupsBase).then(lessonsBase => {
       MONGO.writeToMongo({
         baseName: 'studentSchedule',
         content: generateSchedule(lessonsBase)
@@ -220,10 +231,11 @@ function getAllData() {
       }, MODELS.generalModel);
     });
   });
-  generateTeachersBaseIDAsync(teacherMinID, teacherMaxID).then(teachersBase => {
+  generateTeachersBaseIDAsync(teacherBordersID).then(teachersBase => {
     const allIDs = Object.keys(teachersBase);
     const minID = allIDs[0], maxID = allIDs[allIDs.length - 1];
-    generateTeacherLessonBaseIDAsync(minID, maxID, teachersBase)
+    const borderID = { minID, maxID };
+    generateTeacherLessonBaseIDAsync(borderID, teachersBase)
       .then(teacherLessonBase => {
         MONGO.writeToMongo({
           baseName: 'teachersBase',
@@ -240,4 +252,4 @@ function getAllData() {
 }
 
 MONGO.openConnection()
-  .then(() => getAllData());
+  .then(() => getAllData(studentBordersID, teacherBordersID));

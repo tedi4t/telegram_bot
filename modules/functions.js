@@ -42,7 +42,7 @@ async function sendRequestAsync(url) {
 }
 
 async function readMongo(baseName) {
-  const data = (await MONGO.readFromMongo({ baseName }, MODELS.generalModel));
+  const data = await MONGO.readFromMongo({ baseName }, MODELS.generalModel);
   if (data)
     return data.content || {};
   else {
@@ -88,9 +88,20 @@ function stringScheduleForDay(lessons) {
   }
 }
 
+function stringScheduleForWeek(weekSchedule) {
+  const schedule = [];
+  for (const dayNumber in weekSchedule) {
+    const daySchedule = weekSchedule[dayNumber];
+    const strDaySchedule = stringScheduleForDay(daySchedule);
+    if (strDaySchedule)
+      schedule.push(strDaySchedule);
+  }
+  return  schedule.join('\n\n');
+}
+
 function findLessonNumb(date) {
-  const time = date.getHours() * 60 + date.getMinutes();
   //60 for minutes in hour
+  const time = date.getHours() * 60 + date.getMinutes();
   for (const lessonNumb in scheduleLessons) {
     const lesson = scheduleLessons[lessonNumb];
     if (lesson.condition(time))
@@ -102,9 +113,10 @@ function convergeTeacherName(enteredArr, nameArr) {
   let converged = true;
   for (const index in enteredArr) {
     const surname = parseInt(index, 10) === 0;
-    const sameSurnames = nameArr[index].localeCompare(enteredArr[index]) !== 0;
-    const itemExists = nameArr[index] && enteredArr[index];
-    const sameNames = nameArr[index][0] !== enteredArr[index][0];
+    const nameVal = nameArr[index], enteredVal = enteredArr[index];
+    const sameSurnames = nameVal.localeCompare(enteredVal) !== 0;
+    const itemExists = nameVal && enteredVal;
+    const sameNames = nameVal[0] !== enteredVal[0];
     if (surname && sameSurnames)
       converged = false;
     else if (converged && itemExists && sameNames)
@@ -140,58 +152,43 @@ function findLessonByNumb(lessons, numb) {
   }
 }
 
-function replyOneDayStudent(ctx, week, day, groupID) {
-  if (groupID) {
-    const schedule = studentSchedule.getMany(groupID, week, day).value();
+function replyDay(ctx, time, ID, base) {
+  const { week, day } = time;
+  if (ID) {
+    const schedule = base.getMany(ID, week, day).value();
     const scheduleDay = stringScheduleForDay(schedule);
     if (scheduleDay)
       ctx.reply(scheduleDay, { parse_mode: 'Markdown' });
     else ctx.reply('You don\'t have any lessons');
-  } else ctx.reply('Your group ID was not set!');
+  } else ctx.reply('Your ID was not set!');
+}
+
+function replyWeek(ctx, week, ID, base) {
+  if (ID) {
+    const weekSchedule = base.getMany(ID, week).value();
+    const schedule = stringScheduleForWeek(weekSchedule);
+    if (schedule)
+      ctx.reply(schedule, { parse_mode: 'Markdown' });
+    else ctx.reply('You don\'t have lessons');
+  } else ctx.reply('Your ID was not set!');
+}
+
+function replyOneDayStudent(ctx, week, day, groupID) {
+  const time = { week, day };
+  replyDay(ctx, time, groupID, studentSchedule);
 }
 
 function replyWeekStudent(ctx, week, groupID) {
-  if (groupID) {
-    const weekSchedule = [];
-    const daysInWeek = 7;
-    for (let day = 1; day <= daysInWeek; day++) {
-      const schedule = studentSchedule.getMany(groupID, week, day).value();
-      const daySchedule = stringScheduleForDay(schedule);
-      if (daySchedule)
-        weekSchedule.push(daySchedule);
-    }
-    const schedule = weekSchedule.join('\n\n');
-    if (schedule)
-      ctx.reply(weekSchedule.join('\n\n'), { parse_mode: 'Markdown' });
-    else ctx.reply('You don\'t have lessons');
-  } else ctx.reply('Your group ID was not set!');
+  replyWeek(ctx, week, groupID, studentSchedule);
 }
 
 function replyOneDayTeacher(ctx, week, day, teacherID) {
-  if (teacherID) {
-    const schedule = teacherSchedule.getMany(teacherID, week, day).value();
-    const scheduleDay = stringScheduleForDay(schedule);
-    if (scheduleDay)
-      ctx.reply(scheduleDay, { parse_mode: 'Markdown' });
-    else ctx.reply('You don\'t have any lessons');
-  } else {
-    ctx.reply('Your teacher ID was not set!');
-  }
+  const time = { week, day };
+  replyDay(ctx, time, teacherID, teacherSchedule);
 }
 
 function replyWeekTeacher(ctx, week, teacherID) {
-  if (teacherID) {
-    const weekSchedule = [];
-    const dayInWeek = 7;
-    for (let day = 1; day <= dayInWeek; day++) {
-      const schedule = teacherSchedule.getMany(teacherID, week, day).value();
-      const daySchedule = stringScheduleForDay(schedule);
-      if (daySchedule)
-        weekSchedule.push(daySchedule);
-    }
-    const schedule = weekSchedule.join('\n\n');
-    ctx.reply(schedule, { parse_mode: 'Markdown' });
-  } else ctx.reply('Your teacher ID was not set!');
+  replyWeek(ctx, week, teacherID, teacherSchedule);
 }
 
 function findTeacherName(ctx, week, groupID) {

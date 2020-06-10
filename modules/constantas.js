@@ -53,9 +53,18 @@ const mongoURL = 'mongodb+srv://tedi4t:qazwsxedc@cluster0-9gang.mongodb.net/' +
   'DATABASE?retryWrites=true&w=majority';
 
 const timezoneOffset = 3 * 60 * 60 * 1000; //difference between UTC and UTC + 3
-const dayOffset = 24 *  60 * 60 * 1000; //difference between two days
 
 const amountOfBlocks = 37;
+
+const studentBordersID = {
+  minID: 5000,
+  maxID: 8000,
+};
+
+const teacherBordersID = {
+  minID: 0,
+  maxID: 5000,
+};
 
 module.exports = {
   letterChanger,
@@ -66,5 +75,7 @@ module.exports = {
   timezoneOffset,
   dayOffset,
   amountOfBlocks,
+  studentBordersID,
+  teacherBordersID,
 };
 
