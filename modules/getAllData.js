@@ -7,7 +7,7 @@ const MONGO = require('./mongo');
 
 const Obj = require('./obj.js');
 
-const { studentBordersID, teacherBordersID } = require('constantas.js');
+const { studentBordersID, teacherBordersID } = require('./constantas.js');
 
 // above you can see start and end ID for requests
 const { amountOfBlocks } = require('../modules/constantas.js');
@@ -36,8 +36,11 @@ async function generateBase(borderID, funcGenerateURL, fields, checkObj) {
   const { minID, maxID } = borderID;
   const base = {};
   for (let ID = minID; ID <= maxID; ID++) {
+    let lessons;
     const url = funcGenerateURL(ID);
-    const lessons = (await sendRequestAsync(url)).data;
+    const answer = await sendRequestAsync(url)
+      .catch(err => console.log(err.message));
+    if (answer) lessons = answer.data;
     const group = [];
     if (lessons) {
       for (const lesson of lessons) {
@@ -85,8 +88,11 @@ async function generateGroupBaseIDAsync(borderID) {
   const { minID, maxID } = borderID;
   const groups = {};
   for (let ID = minID; ID <= maxID; ID++) {
+    let group;
     const groupUrl = generateGroupURl(ID);
-    const group = (await sendRequestAsync(groupUrl)).data;
+    const answer = await sendRequestAsync(groupUrl)
+      .catch(err => console.log(err.message));
+    if (answer) group = answer.data;
     if (group) {
       const groupName = group.group_full_name;
       groups[ID] = groupName;
@@ -178,8 +184,11 @@ async function generateTeachersBaseIDAsync(borderID) {
   const { minID, maxID } = borderID;
   const teachers = {};
   for (let ID = minID; ID <= maxID; ID++) {
+    let teacher;
     const teacherURL = generateTeacherURl(ID);
-    const teacher = (await sendRequestAsync(teacherURL)).data;
+    const answer = await sendRequestAsync(teacherURL)
+      .catch(err => console.log(err.message));
+    if (answer) teacher = answer.data;
     if (teacher) {
       const teacherName = teacher.teacher_name;
       if (teacherName)
@@ -246,17 +255,15 @@ function getAllData(studentBordersID, teacherBordersID) {
     const minID = allIDs[0], maxID = allIDs[allIDs.length - 1];
     const borderID = { minID, maxID };
     generateTeacherLessonBaseIDAsync(borderID, teachersBase)
-      .then(teacherLessonBase => {
-        MONGO.writeToMongo({
+      .then(async teacherLessonBase => {
+        await MONGO.writeToMongo({
           baseName: 'teachersBase',
           content: teachersBase
-        }, MODELS.generalModel)
-          .then(() => {
-            MONGO.writeToMongo({
-              baseName: 'teachersSchedule',
-              content: generateSchedule(teacherLessonBase)
-            }, MODELS.generalModel, true);
-          });
+        }, MODELS.generalModel);
+        await MONGO.writeToMongo({
+          baseName: 'teachersSchedule',
+          content: generateSchedule(teacherLessonBase)
+        }, MODELS.generalModel, () => MONGO.closeConnection());
       });
   });
 }

@@ -12,11 +12,11 @@ async function readFromMongo(obj, model) {
   return await model.findOne(obj);
 }
 
-async function writeToMongo(obj, Model, disconnect = false) {
+async function writeToMongo(obj, Model, callback) {
   const model = new Model(obj);
   model.save(async err => {
     if (err) return console.log(err.message);
-    if (disconnect) closeConnection();
+    if (callback) callback();
   });
 }
 
@@ -32,5 +32,6 @@ module.exports = {
   openConnection,
   readFromMongo,
   writeToMongo,
+  closeConnection,
   overwrite,
 };
