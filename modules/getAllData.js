@@ -13,9 +13,13 @@ const { studentBordersID, teacherBordersID } = require('constantas.js');
 const { amountOfBlocks } = require('../modules/constantas.js');
 
 async function sendRequestAsync(url) {
-  const response = await fetch(url);
-  const data = await response.json();
-  return data;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    return data;
+  } catch (e) {
+    console.log(e.message);
+  }
 }
 
 //lessonsBase
