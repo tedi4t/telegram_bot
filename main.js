@@ -161,8 +161,8 @@ bot.command(['/teachernextweek',
 bot.command(['/busyrooms', '/busyrooms@aefioiefjsrhfbsbjbot'], ctx => {
   const text = ctx.update.message.text;
   const block = FUNCTIONS.parseCommandText(text)[0];
-  const rooms = FUNCTIONS.findBusyRooms(block, week).join(', ');
-  if (rooms) ctx.reply(rooms);
+  const rooms = FUNCTIONS.findBusyRooms(block, week);
+  if (rooms.length > 0) ctx.reply(rooms.join(', '));
   else ctx.reply('Can\'t find rooms');
 });
 
