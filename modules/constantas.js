@@ -39,12 +39,12 @@ const days = [
   'Неділя',
 ];
 
-const scheduleLessons = [
-  { condition: time => (510 <= time && time <= 605) },
-  { condition: time => (625 <= time && time <= 720) },
-  { condition: time => (740 <= time && time <= 835) },
-  { condition: time => (855 <= time && time <= 950) },
-  { condition: time => (970 <= time && time <= 1065) }
+const lessons = [
+  [510, 605],
+  [625, 720],
+  [740, 835],
+  [855, 950],
+  [970, 1065],
 ];
 
 const milliSecondsWeek = 604800000;
@@ -69,7 +69,7 @@ const teacherBordersID = {
 module.exports = {
   letterChanger,
   days,
-  scheduleLessons,
+  lessons,
   milliSecondsWeek,
   mongoURL,
   timezoneOffset,

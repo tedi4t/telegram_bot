@@ -1,7 +1,8 @@
 'use strict';
 
-const { letterChanger, days, scheduleLessons,
-  timezoneOffset } = require('./constantas.js');
+const constants = require('./constantas.js');
+const { letterChanger, days, lessons, timezoneOffset } = constants;
+
 const fetch = require('node-fetch');
 const Obj = require('./obj.js');
 
@@ -37,18 +38,14 @@ function findMiliSecondsDate() {
 
 async function sendRequestAsync(url) {
   const response = await fetch(url);
-  const data = await response.json();
-  return data;
+  return await response.json();
 }
 
 async function readMongo(baseName) {
   const data = await MONGO.readFromMongo({ baseName }, MODELS.generalModel);
-  if (data) {
-    return data.content || {};
-  } else {
-    MONGO.writeToMongo({ baseName, content: {} }, MODELS.generalModel);
-    return {};
-  }
+  if (data && data.content) return data.content;
+  MONGO.writeToMongo({ baseName, content: {} }, MODELS.generalModel);
+  return {};
 }
 
 function parseCommandText(str) {
@@ -61,32 +58,30 @@ function parseGroupName(str) {
   const arr = str.split('');
   const parsedNameArr = [];
   //adding - for third position in group name
+  let index = 0;
   parsedNameArr[2] = '-';
-  for (const index in arr) {
-    const indInt = parseInt(index, 10);
-    const value = arr[index];
+  for (const value of arr) {
     const changer = letterChanger[value];
     const newValue = changer || value;
-    if (parsedNameArr[indInt]) parsedNameArr[indInt + 1] = newValue;
-    else parsedNameArr[indInt] = newValue;
+    if (parsedNameArr[index]) parsedNameArr[index + 1] = newValue;
+    else parsedNameArr[index] = newValue;
+    index++;
   }
   return parsedNameArr.join('');
 }
 
 function stringScheduleForDay(lessons) {
-  if (lessons) {
-    const key = Object.keys(lessons)[0];
-    const lesson = lessons[key];
-    const dayNumbInArr = lesson.dayNumber - 1;
-    const day = days[dayNumbInArr];
-    const str = [`*${day}*`];
-    for (const key in lessons) {
-      const lesson = lessons[key];
-      str.push(`${lesson.lessonNumber}. ${lesson.lessonName} ` +
-        `${lesson.lessonType} ${lesson.lessonRoom}`);
-    }
-    return str.join('\n');
+  if (!lessons) return;
+  const key = Object.keys(lessons)[0];
+  const lesson = lessons[key];
+  const dayNumbInArr = lesson.dayNumber - 1;
+  const day = days[dayNumbInArr];
+  const str = [`*${day}*`];
+  for (const lesson of lessons) {
+    const { lessonNumber, lessonName, lessonType, lessonRoom } = lesson;
+    str.push(`${lessonNumber}. ${lessonName} ${lessonType} ${lessonRoom}`);
   }
+  return str.join('\n');
 }
 
 function stringScheduleForWeek(weekSchedule) {
@@ -102,9 +97,9 @@ function stringScheduleForWeek(weekSchedule) {
 function findLessonNumb(date) {
   //60 for minutes in hour
   const time = date.getHours() * 60 + date.getMinutes();
-  for (const lessonNumb in scheduleLessons) {
-    const lesson = scheduleLessons[lessonNumb];
-    if (lesson.condition(time)) return parseInt(lessonNumb, 10) + 1;
+  for (const lessonNumb in lessons) {
+    const [start, end] = lessons[lessonNumb];
+    if (time >= start && time <= end) return parseInt(lessonNumb, 10) + 1;
   }
 }
 
