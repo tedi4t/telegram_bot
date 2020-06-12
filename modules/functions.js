@@ -15,7 +15,7 @@ MONGO.openConnection().then(async () => {
   studentSchedule = new Obj(await readMongo('studentSchedule'));
   teachersBase = await readMongo('teachersBase');
   teacherSchedule = new Obj(await readMongo('teachersSchedule'));
-  roomsSchedule = await readMongo('roomsSchedule');
+  roomsSchedule = new Obj(await readMongo('roomsSchedule'));
 });
 
 function findMiliSecondsDate() {
@@ -118,10 +118,9 @@ function convergeTeacherName(enteredArr, nameArr) {
     const sameSurnames = nameVal.localeCompare(enteredVal) !== 0;
     const itemExists = nameVal && enteredVal;
     const sameNames = nameVal[0] !== enteredVal[0];
-    if (surname && sameSurnames)
+    if ((surname && sameSurnames) || (converged && itemExists && sameNames)) {
       converged = false;
-    else if (converged && itemExists && sameNames)
-      converged = false;
+    }
   }
   return converged;
 }
@@ -144,13 +143,6 @@ function findCongruencesGroup(str) {
       congruences.push({ ID, name: nameArr.join(' ') });
   }
   return congruences;
-}
-
-function findLessonByNumb(lessons, numb) {
-  for (const lesson of lessons) {
-    if (parseInt(lesson.lessonNumber, 10) === numb)
-      return lesson;
-  }
 }
 
 function replyDay(ctx, time, ID, base) {
@@ -198,7 +190,7 @@ function findTeacherName(ctx, week, groupID) {
   const day = date.getDay();
   const schedule = studentSchedule.getMany(groupID, week, day).value();
   const lessonNumb = findLessonNumb(date);
-  const lesson = findLessonByNumb(schedule, lessonNumb);
+  const lesson = schedule[lessonNumb];
   const teacher = lesson.teachers;
   return teacher;
 }
@@ -208,7 +200,7 @@ function findBusyRooms(block, week) {
   date.setTime(date.getTime() + timezoneOffset);
   const day = date.getDay();
   const lessonNumb = findLessonNumb(date);
-  const rooms = roomsSchedule[block][week][day][lessonNumb];
+  const rooms = roomsSchedule.getMany(block, week, day, lessonNumb).value();
   return rooms;
 }
 

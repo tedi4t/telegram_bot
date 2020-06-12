@@ -3,11 +3,12 @@
 const { Telegraf } = require('telegraf');
 
 const FUNCTIONS = require('./modules/functions');
-const MODELS = require('./modules/models.js');
-const MONGO = require('./modules/mongo.js');
+const MODELS = require('./modules/models');
+const MONGO = require('./modules/mongo');
 
 const { TOKEN, URL } = require('./modules/config');
 const { milliSecondsWeek } = require('./modules/constantas');
+const commands = require('./modules/answers');
 
 const bot = new Telegraf(TOKEN);
 
@@ -22,9 +23,13 @@ MONGO.openConnection().then(async () => {
 });
 
 let week;
-getWeek(false);
-const secondsPassed = FUNCTIONS.findMiliSecondsDate();
-setTimeout(getWeek, milliSecondsWeek - secondsPassed);
+
+function setWeek() {
+  //false means that we won't set timer in getWeek function
+  getWeek(false);
+  const secondsPassed = FUNCTIONS.findMiliSecondsDate();
+  setTimeout(getWeek, milliSecondsWeek - secondsPassed);
+}
 
 async function getWeek(setTimer = true) {
   const url = 'https://api.rozklad.org.ua/v2/weeks';
@@ -44,48 +49,43 @@ function sendInlineKeyboardMessage(chatID, keyboard) {
   bot.telegram.sendMessage(chatID, message, selectKeyboard);
 }
 
-bot.start(ctx => {
-  ctx.reply('Hi! I\'m your bot in the KPI world. At first, choose your' +
-    ' group. To do this, write /group and name of your group.' +
-  'e.g. "/group ip93". If I can\'t find it, please write it in ukrainian. ' +
-    'If you are teacher write /teacher and your surname un ukrainian.' +
-  'If you want you can write your name and paternal name. ' +
-    'e. g. "/teacher Шемсединов Тимур Гафарович"');
-});
+function setGroupTeacher(ctx, congruences, objMongo, callbackData) {
+  //further we will use elem instead of teacher/group
+  const chatID = ctx.update.message.chat.id;
+  const chatElemID = objMongo.content;
+  const { baseName } = objMongo;
+  const congruencesLen = congruences.length;
+  if (congruencesLen === 0) {
+    ctx.reply('Can\'t find name');
+  } else if (congruencesLen === 1) {
+    chatElemID[chatID] = congruences[0].ID;
+    MONGO.overwrite(baseName, objMongo, MODELS.generalModel);
+    ctx.reply('Your name was set');
+  } else {
+    const keyboard = [];
+    for (const elem of congruences) {
+      keyboard.push([{
+        text: elem.name,
+        callback_data: `${callbackData} ${elem.ID}`
+      }]);
+    }
+    sendInlineKeyboardMessage(chatID, keyboard);
+  }
+}
 
-bot.help(ctx => {
-  ctx.reply('At first, choose your group. To do this,' +
-    ' write /group and name of your group. e.g. "/group ip93".' +
-    ' If I can\'t find it, please write it in ukrainian. If you' +
-    ' are teacher write /teacher and your surname un ukrainian.' +
-  'If you want you can write your name and paternal name.' +
-    ' e. g. "/teacher Шемсединов Тимур Гафарович"');
-});
+bot.start(ctx => ctx.reply(commands.start));
+
+bot.help(ctx => ctx.reply(commands.help));
 
 bot.command(['/group', '/group@aefioiefjsrhfbsbjbot'], ctx => {
-  const chatID = ctx.update.message.chat.id;
   const text = ctx.update.message.text;
   const parsedCommand = FUNCTIONS.parseCommandText(text)[0];
   const enteredGroup = FUNCTIONS.parseGroupName(parsedCommand);
   const congruences = FUNCTIONS.findCongruencesGroup(enteredGroup);
-  const congruencesLen = congruences.length;
-  if (congruencesLen === 0) {
-    ctx.reply('Can\'t find group\'s name');
-  } else  if (congruencesLen === 1) {
-    chatGroupID[chatID] = congruences[0].ID;
-    const baseName = 'chatGroupID';
-    const newObjMongo = { baseName, content: chatGroupID };
-    MONGO.overwrite(baseName, newObjMongo, MODELS.generalModel);
-    ctx.reply('Your group was set');
-  } else {
-    const keyboard = [];
-    for (const group of congruences)
-      keyboard.push([{
-        text: group.name,
-        callback_data: `group ${group.ID}`
-      }]);
-    sendInlineKeyboardMessage(chatID, keyboard);
-  }
+  const baseName = 'chatGroupID';
+  const newObjMongo = { baseName, content: chatGroupID };
+  const callbackData = 'group';
+  setGroupTeacher(ctx, congruences, newObjMongo, callbackData);
 });
 
 bot.command(['/today', '/today@aefioiefjsrhfbsbjbot'], ctx => {
@@ -99,8 +99,8 @@ bot.command(['/tomorrow', '/tomorrow@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const groupID = chatGroupID[chatID];
   const day = new Date().getDay();
-  if (day === 7) //for last day of the week another request
-    FUNCTIONS.replyOneDayStudent(ctx, week % 2 + 1, 1, groupID);
+  //for last day of the week another request
+  if (day === 7) FUNCTIONS.replyOneDayStudent(ctx, week % 2 + 1, 1, groupID);
   else FUNCTIONS.replyOneDayStudent(ctx, week, day + 1, groupID);
 });
 
@@ -117,30 +117,16 @@ bot.command(['/nextweek', '/nextweek@aefioiefjsrhfbsbjbot'], ctx => {
 });
 
 bot.command(['/teacher', '/teacher@aefioiefjsrhfbsbjbot'], ctx => {
-  const chatID = ctx.update.message.chat.id;
   const text = ctx.update.message.text;
   const enteredNameArr = FUNCTIONS.parseCommandText(text);
   const congruences = FUNCTIONS.findCongruencesTeacher(enteredNameArr);
-  const congruencesLen = congruences.length;
-  if (congruencesLen === 0) {
-    ctx.reply('Can\'t find group\'s name');
-  } else if (congruences.length === 1) {
-    chatTeacherID[chatID] = congruences[0].ID;
-    const newObjMongo = {
-      baseName: 'chatTeacherID',
-      content: chatTeacherID
-    };
-    MONGO.overwrite('chatTeacherID', newObjMongo, MODELS.generalModel);
-    ctx.reply('Your name was set');
-  } else {
-    const keyboard = [];
-    for (const teacher of congruences)
-      keyboard.push([{
-        text: teacher.name,
-        callback_data: `teacher ${teacher.ID}`
-      }]);
-    sendInlineKeyboardMessage(chatID, keyboard);
-  }
+  const baseName = 'chatTeacherID';
+  const callbackData = 'teacher';
+  const newObjMongo = {
+    baseName,
+    content: chatTeacherID
+  };
+  setGroupTeacher(ctx, congruences, newObjMongo, callbackData);
 });
 
 bot.command(['/teachertoday', '/teachertoday@aefioiefjsrhfbsbjbot'], ctx => {
@@ -176,11 +162,9 @@ bot.command(['/teachernextweek',
 bot.command(['/busyrooms', '/busyrooms@aefioiefjsrhfbsbjbot'], ctx => {
   const text = ctx.update.message.text;
   const block = FUNCTIONS.parseCommandText(text)[0];
-  try {
-    ctx.reply(FUNCTIONS.findBusyRooms(block, week).join(', '));
-  } catch (e) {
-    ctx.reply('Can\'t find rooms');
-  }
+  const rooms = FUNCTIONS.findBusyRooms(block, week).join(', ');
+  if (rooms) ctx.reply(rooms)
+  else ctx.reply('Can\'t find rooms');
 });
 
 bot.command(['/name', '/name@aefioiefjsrhfbsbjbot'], ctx => {
@@ -203,19 +187,19 @@ bot.on('callback_query', ctx => {
   const splitQuery = text.split(' ');
   const command = splitQuery[0];
   const ID = splitQuery[1];
+  let objMongo, baseName;
   ctx.editMessageReplyMarkup();
   if (command === 'teacher') {
     chatTeacherID[chatID] = ID;
-    const baseName = 'chatTeacherID';
-    const newObjMongo = { baseName, content: chatTeacherID };
-    MONGO.overwrite(baseName, newObjMongo, MODELS.generalModel);
-    ctx.reply('Your name was set');
-  }
-  if (command === 'group') {
+    baseName = 'chatTeacherID';
+    objMongo = { baseName, content: chatTeacherID };
+  } else if (command === 'group') {
     chatGroupID[chatID] = ID;
-    const baseName = 'chatGroupID';
-    const newObjMongo = { baseName, content: chatGroupID };
-    MONGO.overwrite(baseName, newObjMongo, MODELS.generalModel);
-    ctx.reply('Your group was set');
+    baseName = 'chatGroupID';
+    objMongo = { baseName, content: chatGroupID };
   }
+  MONGO.overwrite(baseName, objMongo, MODELS.generalModel);
+  ctx.reply('Your name was set');
 });
+
+setWeek();
