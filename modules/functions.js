@@ -198,8 +198,11 @@ function findBusyRooms(block, week) {
   date.setTime(date.getTime() + timezoneOffset);
   const day = date.getDay();
   const lessonNumb = findLessonNumb(date);
-  const rooms = roomsSchedule.getMany(block, week, day, lessonNumb).value();
-  return rooms;
+  try {
+    return roomsSchedule.getMany(block, week, day, lessonNumb).value();
+  } catch (e) {
+    return [];
+  }
 }
 
 module.exports = {
