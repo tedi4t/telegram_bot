@@ -199,7 +199,6 @@ function findBusyRooms(block, week) {
   const day = date.getDay();
   const lessonNumb = findLessonNumb(date);
   const rooms = roomsSchedule.getMany(block, week, day, lessonNumb).value();
-  if (Object.keys(rooms) === 0) return [];
   return rooms;
 }
 
