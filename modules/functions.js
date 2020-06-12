@@ -6,12 +6,12 @@ const { letterChanger, days, lessons, timezoneOffset } = constants;
 const fetch = require('node-fetch');
 const Obj = require('./obj.js');
 
-const MODELS = require('./models.js');
-const MONGO = require('./mongo.js');
+const models = require('./models.js');
+const mongo = require('./mongo.js');
 
 let groupsBase, studentSchedule, teachersBase, teacherSchedule, roomsSchedule;
 
-MONGO.openConnection().then(async () => {
+mongo.openConnection().then(async () => {
   groupsBase = await readMongo('groupsBase');
   studentSchedule = new Obj(await readMongo('studentSchedule'));
   teachersBase = await readMongo('teachersBase');
@@ -42,9 +42,9 @@ async function sendRequestAsync(url) {
 }
 
 async function readMongo(baseName) {
-  const data = await MONGO.readFromMongo({ baseName }, MODELS.generalModel);
+  const data = await mongo.readFrommongo({ baseName }, models.generalModel);
   if (data && data.content) return data.content;
-  MONGO.writeToMongo({ baseName, content: {} }, MODELS.generalModel);
+  mongo.writeTomongo({ baseName, content: {} }, models.generalModel);
   return {};
 }
 

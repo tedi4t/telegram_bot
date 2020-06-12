@@ -18,8 +18,8 @@ bot.startWebhook(`/bot${TOKEN}`, null, process.env.PORT);
 let chatGroupID, chatTeacherID;
 
 mongo.openConnection().then(async () => {
-  chatGroupID = await functions.readmongo('chatGroupID');
-  chatTeacherID = await functions.readmongo('chatTeacherID');
+  chatGroupID = await functions.readMongo('chatGroupID');
+  chatTeacherID = await functions.readMongo('chatTeacherID');
 });
 
 let week;
