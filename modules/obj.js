@@ -23,7 +23,7 @@ class Obj {
   }
 
   get(key) {
-    const value = this.obj[key];
+    const value = this.obj[key] || {};
     return new Obj(value);
   }
 
