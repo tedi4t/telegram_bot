@@ -141,8 +141,7 @@ bot.command(['/teachertomorrow',
   const chatID = ctx.update.message.chat.id;
   const teacherID = chatTeacherID[chatID];
   const day = new Date().getDay();
-  if (day === 7)
-    FUNCTIONS.replyOneDayTeacher(ctx, week % 2 + 1, 1);
+  if (day === 7) FUNCTIONS.replyOneDayTeacher(ctx, week % 2 + 1, 1);
   else FUNCTIONS.replyOneDayTeacher(ctx, week, day + 1, teacherID);
 });
 
@@ -163,18 +162,16 @@ bot.command(['/busyrooms', '/busyrooms@aefioiefjsrhfbsbjbot'], ctx => {
   const text = ctx.update.message.text;
   const block = FUNCTIONS.parseCommandText(text)[0];
   const rooms = FUNCTIONS.findBusyRooms(block, week).join(', ');
-  if (rooms) ctx.reply(rooms)
+  if (rooms) ctx.reply(rooms);
   else ctx.reply('Can\'t find rooms');
 });
 
 bot.command(['/name', '/name@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const groupID = chatGroupID[chatID];
-  try {
-    ctx.reply(FUNCTIONS.findTeacherName(ctx, week, groupID));
-  } catch (e) {
-    ctx.reply('You don\'t have any lesson now');
-  }
+  const teacher = ctx.reply(FUNCTIONS.findTeacherName(ctx, week, groupID));
+  if (teacher) ctx.reply(FUNCTIONS.findTeacherName(ctx, week, groupID));
+  else ctx.reply('You don\'t have any lesson now');
 });
 
 bot.catch(err => {

@@ -5,8 +5,8 @@ const { letterChanger, days, scheduleLessons,
 const fetch = require('node-fetch');
 const Obj = require('./obj.js');
 
-const MODELS = require('../modules/models.js');
-const MONGO = require('../modules/mongo.js');
+const MODELS = require('./models.js');
+const MONGO = require('./mongo.js');
 
 let groupsBase, studentSchedule, teachersBase, teacherSchedule, roomsSchedule;
 
@@ -43,9 +43,9 @@ async function sendRequestAsync(url) {
 
 async function readMongo(baseName) {
   const data = await MONGO.readFromMongo({ baseName }, MODELS.generalModel);
-  if (data)
+  if (data) {
     return data.content || {};
-  else {
+  } else {
     MONGO.writeToMongo({ baseName, content: {} }, MODELS.generalModel);
     return {};
   }
@@ -94,8 +94,7 @@ function stringScheduleForWeek(weekSchedule) {
   for (const dayNumber in weekSchedule) {
     const daySchedule = weekSchedule[dayNumber];
     const strDaySchedule = stringScheduleForDay(daySchedule);
-    if (strDaySchedule)
-      schedule.push(strDaySchedule);
+    if (strDaySchedule) schedule.push(strDaySchedule);
   }
   return  schedule.join('\n\n');
 }
@@ -105,8 +104,7 @@ function findLessonNumb(date) {
   const time = date.getHours() * 60 + date.getMinutes();
   for (const lessonNumb in scheduleLessons) {
     const lesson = scheduleLessons[lessonNumb];
-    if (lesson.condition(time))
-      return parseInt(lessonNumb, 10) + 1;
+    if (lesson.condition(time)) return parseInt(lessonNumb, 10) + 1;
   }
 }
 
@@ -139,8 +137,9 @@ function findCongruencesGroup(str) {
   const congruences = [];
   for (const ID in groupsBase) {
     const nameArr = groupsBase[ID].split(' ');
-    if (str.localeCompare(nameArr[0]) === 0)
+    if (str.localeCompare(nameArr[0]) === 0) {
       congruences.push({ ID, name: nameArr.join(' ') });
+    }
   }
   return congruences;
 }
@@ -150,8 +149,7 @@ function replyDay(ctx, time, ID, base) {
   if (ID) {
     const schedule = base.getMany(ID, week, day).value();
     const scheduleDay = stringScheduleForDay(schedule);
-    if (scheduleDay)
-      ctx.reply(scheduleDay, { parse_mode: 'Markdown' });
+    if (scheduleDay) ctx.reply(scheduleDay, { parse_mode: 'Markdown' });
     else ctx.reply('You don\'t have any lessons');
   } else ctx.reply('Your ID was not set!');
 }
@@ -160,8 +158,7 @@ function replyWeek(ctx, week, ID, base) {
   if (ID) {
     const weekSchedule = base.getMany(ID, week).value();
     const schedule = stringScheduleForWeek(weekSchedule);
-    if (schedule)
-      ctx.reply(schedule, { parse_mode: 'Markdown' });
+    if (schedule) ctx.reply(schedule, { parse_mode: 'Markdown' });
     else ctx.reply('You don\'t have lessons');
   } else ctx.reply('Your ID was not set!');
 }
@@ -191,6 +188,7 @@ function findTeacherName(ctx, week, groupID) {
   const schedule = studentSchedule.getMany(groupID, week, day).value();
   const lessonNumb = findLessonNumb(date);
   const lesson = schedule[lessonNumb];
+  if (!lesson) return;
   const teacher = lesson.teachers;
   return teacher;
 }

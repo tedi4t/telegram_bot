@@ -25,10 +25,11 @@ async function sendRequestAsync(url) {
 //lessonsBase
 
 function projection(obj, apiKey) {
-  if (Array.isArray(apiKey))
+  if (Array.isArray(apiKey)) {
     return apiKey.reduce((val, key) =>
       (val ? (typeof key === 'function' ?
         key(val) : val[key]) : undefined), obj);
+  }
   return obj[apiKey];
 }
 
@@ -108,9 +109,8 @@ function sortByWeek(lessons) {
   for (const lesson of lessons) {
     const key = parseInt(lesson.week, 10);
     const item = sorted[key];
-    if (item)
-      item.push(lesson);
-    else sorted[parseInt(lesson.week, 10)] = [lesson];
+    if (item) item.push(lesson);
+    else sorted[key] = [lesson];
   }
   return sorted;
 }
