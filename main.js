@@ -169,8 +169,8 @@ bot.command(['/busyrooms', '/busyrooms@aefioiefjsrhfbsbjbot'], ctx => {
 bot.command(['/name', '/name@aefioiefjsrhfbsbjbot'], ctx => {
   const chatID = ctx.update.message.chat.id;
   const groupID = chatGroupID[chatID];
-  const teacher = ctx.reply(FUNCTIONS.findTeacherName(ctx, week, groupID));
-  if (teacher) ctx.reply(FUNCTIONS.findTeacherName(ctx, week, groupID));
+  const teacher = FUNCTIONS.findTeacherName(ctx, week, groupID);
+  if (teacher) ctx.reply(teacher);
   else ctx.reply('You don\'t have any lesson now');
 });
 
