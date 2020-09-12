@@ -8,7 +8,7 @@
     "file-system": "^2.2.2",
     "mongodb": "^3.5.7",
     "mongoose": "^5.9.16",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "telegraf": "^3.38.0"
   },
   "description": "To work with the bot, follow the link 'https://t.me/aefioiefjsrhfbsbjbot'.",
